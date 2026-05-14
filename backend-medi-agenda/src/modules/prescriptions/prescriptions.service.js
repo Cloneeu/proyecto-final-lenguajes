@@ -32,8 +32,8 @@ export const prescriptionsService = {
   async update(id, data, user) {
     // Actualiza solo si existe y el usuario tiene permisos
     const rx = await prescriptionsRepository.findById(id);
-    if (rx.deletedAt) throw new AppError('Receta no encontrada', 404);
-    if (!rx) throw new AppError('Prescription not found', 404);
+    // Validamos que la receta exista antes de intentar actualizarla
+    if (!rx || rx.deletedAt) throw new AppError('Receta no encontrada', 404);
     assertOwnership(rx, user);
     return prescriptionsRepository.update(id, data);
   },
@@ -41,8 +41,8 @@ export const prescriptionsService = {
   async delete(id, user) {
     // Verifica su existencia y propiedad antes de eliminar
     const rx = await prescriptionsRepository.findById(id);
-    if (rx.deletedAt) throw new AppError('Receta no encontrada', 404);
-    if (!rx) throw new AppError('Prescription not found', 404);
+    // Validamos que la receta exista antes de intentar eliminarla
+    if (!rx || rx.deletedAt) throw new AppError('Receta no encontrada', 404);
     assertOwnership(rx, user);
     await prescriptionsRepository.delete(id);
   },

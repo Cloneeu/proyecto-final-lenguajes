@@ -2,10 +2,10 @@ const VALID_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^\d{2}:\d{2}$/;
 
-export function validateCreateAppointment(body) {
-  // Extrae los campos obligatorios que definen una cita.
+export function validateCreateAppointment(body, user) {
   const { patientId, doctorId, date, startTime, endTime } = body;
-  if (!patientId) return { error: 'patientId es requerido' };
+  // El paciente no envía patientId; el backend lo inyecta desde el token
+  if (user?.role !== 'patient' && !patientId) return { error: 'patientId es requerido' };
   if (!doctorId) return { error: 'doctorId es requerido' };
   // La fecha debe seguir el formato de YYYY-MM-DD.
   if (!date) return { error: 'Date es requerida' };
