@@ -17,21 +17,25 @@ export const prescriptionsRepository = {
   },
 
   async findByDoctor(doctorId) {
-    // Filtra recetas creadas por un doctor en concreto
+    // Filtra las recetas de un doctor específico
     const snap = await db.collection(COLLECTION)
       .where('doctorId', '==', doctorId)
-      .orderBy('createdAt', 'desc')
       .get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Convertir los docs de firestore a objetos de javascript y ordenar por fecha de creación para mostrar primero lo más reciente
+    return snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
   },
 
   async findByPatient(patientId) {
-    // Filtra recetas asociadas a un paciente en concreto
+    // Filtra las recetas de un paciente específico
     const snap = await db.collection(COLLECTION)
       .where('patientId', '==', patientId)
-      .orderBy('createdAt', 'desc')
       .get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Convertir los docs de firestore a objetos de javascript y ordenar por fecha de creación para mostrar primero lo más reciente
+    return snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
   },
 
   async create(data) {

@@ -87,18 +87,17 @@ export const appointmentsService = {
   async updateStatus(id, status, user) {
     // Hay que validar la existencia, propiedad y transición de un estado antes de actualizar la cita
     const appt = await appointmentsRepository.findById(id);
-    if (!appt) throw new AppError('Cita no encontrada', 404);
+    // Validamos que la cita exista antes de intentar actualizar su estado
+    if (!appt || appt.deletedAt) throw new AppError('Cita no encontrada', 404);
     assertOwnership(appt, user);
     assertStatusTransition(appt.status, status, user.role);
     return appointmentsRepository.update(id, { status });
   },
 
   async delete(id) {
-    // Elimina solo si la cita existe
     const appt = await appointmentsRepository.findById(id);
-    // Si ya fue eliminada o no existe se lanza un error de no encontrado
-    if (appt.deletedAt) throw new AppError('Cita no encontrada', 404);
-    if (!appt) throw new AppError('Cita no encontrada', 404);
+    // Validamos que la cita exista antes de intentar eliminarla
+    if (!appt || appt.deletedAt) throw new AppError('Cita no encontrada', 404);
     await appointmentsRepository.delete(id);
   },
 };
