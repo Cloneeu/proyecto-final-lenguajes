@@ -1,8 +1,10 @@
-import { doctorsRepository } from './doctors.repository.js';
+import { doctorsService } from './doctors.service.js';
+import { validateDoctor } from './doctors.validator.js';
 
 export const getAllDoctors = async (req, res) => {
     try {
-        const doctors = await doctorsRepository.findAll();
+        // Aqui se  pide los datos al servicio
+        const doctors = await doctorsService.getAllDoctors();
         res.status(200).json(doctors);
     } catch (error) {
         res.status(500).json({ message: "Error al obtener médicos", error: error.message });
@@ -11,36 +13,37 @@ export const getAllDoctors = async (req, res) => {
 
 export const createDoctor = async (req, res) => {
     try {
-        const { name, specialtyId, email, phone } = req.body;
-        
-        if (!name || !specialtyId) {
-            return res.status(400).json({ message: "Nombre y Especialidad son obligatorios" });
+        // Usamos el validador antes de procesar nada
+        const { isValid, errors } = validateDoctor(req.body);
+        if (!isValid) {
+            return res.status(400).json({ message: "Datos inválidos 🧐", errors });
         }
 
-        const result = await doctorsRepository.create({ 
-            name, 
-            specialtyId, 
-            email: email || "", 
-            phone: phone || "" 
+        const { name, specialtyId, email, phone } = req.body;
+
+        // Se le pasan  los datos limpios al servicio
+        // El servicio se encargará de revisar si la especialidad existe y guardarlo
+        const result = await doctorsService.createDoctor({
+            name,
+            specialtyId,
+            email: email || "",
+            phone: phone || ""
         });
 
         res.status(201).json(result);
     } catch (error) {
-        res.status(500).json({ message: "Error al crear médico", error: error.message });
+        // Si el servicio lanza el error de "La especialidad no existe", cae aquí
+        res.status(400).json({ message: error.message });
     }
 };
+
 export const toggleDoctorStatus = async (req, res) => {
     try {
         const { id } = req.params;
-        const doctor = await doctorsRepository.findById(id);
-
-        if (!doctor) return res.status(404).json({ message: "Médico no encontrado 💁🏻" });
-
-        const newStatus = doctor.status === 'active' ? 'inactive' : 'active';
-        const result = await doctorsRepository.updateStatus(id, newStatus);
+        const result = await doctorsService.toggleStatus(id);
 
         res.status(200).json(result);
     } catch (error) {
-        res.status(500).json({ message: "Error al cambiar estatus 💁🏻", error: error.message });
+        res.status(404).json({ message: error.message });
     }
 };
