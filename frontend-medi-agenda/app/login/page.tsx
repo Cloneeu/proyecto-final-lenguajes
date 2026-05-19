@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -59,6 +61,20 @@ export default function LoginPage() {
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700">
               Acceder
             </Button>
+{/* Tu botón de Acceder original debe estar justo arriba de esto */}
+        
+        <div className="mt-4 flex flex-col gap-2 text-center">
+          <span className="text-sm text-gray-400">¿Eres un paciente nuevo?</span>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => router.push('/registro')}
+            className="w-full border-gray-600 hover:bg-gray-800"
+          >
+            Registrarse
+          </Button>
+        </div>
+
           </form>
         </CardContent>
       </Card>
