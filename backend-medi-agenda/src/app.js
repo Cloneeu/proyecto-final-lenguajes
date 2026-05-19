@@ -16,6 +16,7 @@ const app = express();
 // Middlewares
 app.use(cors({ origin: env.corsOrigin }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

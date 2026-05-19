@@ -19,9 +19,9 @@ export default function LoginPage() {
     setError('');
     try {
       await login(formData);
+      router.push('/dashboard/paciente');
     } catch (err: any) {
-      // Con fetch, el error viene directamente en err.message
-      setError(err.message || 'Credenciales inválidas');
+      setError(err.message || 'Contraseña o correo incorrecto');
     }
   };
 
@@ -31,7 +31,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Medi-Agenda</CardTitle>
           <CardDescription className="text-center">
-            Inicia sesión para gestionar tus pacientes
+            Inicia sesión para revisar tus citas
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -61,17 +61,10 @@ export default function LoginPage() {
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700">
               Acceder
             </Button>
-{/* Tu botón de Acceder original debe estar justo arriba de esto */}
-        
         <div className="mt-4 flex flex-col gap-2 text-center">
           <span className="text-sm text-gray-400">¿Eres un paciente nuevo?</span>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => router.push('/registro')}
-            className="w-full border-gray-600 hover:bg-gray-800"
-          >
-            Registrarse
+          <Button type="button" variant="outline" onClick={() => router.push('/registro')} className="w-full border-gray-600 hover:bg-gray-800">
+            Registrarse 
           </Button>
         </div>
 

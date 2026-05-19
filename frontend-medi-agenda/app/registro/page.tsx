@@ -1,94 +1,112 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { authService } from '@/services/authService';
 
 export default function RegistroPacientePage() {
   const router = useRouter();
+
   const [formData, setFormData] = useState({
     nombre: '',
+    apellidos: '',
+    edad: '',
+    telefono: '',
+    doctorId: '',
+    fechaCita: '',
+    motivo: '',
     correo: '',
     password: ''
   });
 
-  const handleChange = (e: any) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const [doctores, setDoctores] = useState<any[]>([]);
+
+  useEffect(() => {
+    const cargarDoctores = async () => {
+      try {
+        const res = await fetch('http://localhost:4000/api/doctors');
+        if (!res.ok) throw new Error('No se pudieron cargar los doctores');
+        
+        const data = await res.json();
+        setDoctores(data);
+      } catch (error) {
+        alert(error.message || 'Error al cargar los doctores');}
+    };
+    
+    cargarDoctores();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Registrando nuevo paciente...", formData);
-    // Aquí después conectarás con tu servicio de registro del backend
-    
-    // Simular que el registro fue exitoso y regresarlo al login
-    alert("Paciente registrado con éxito");
-    router.push('/login');
+    try {
+      const payload = {
+        name: `${formData.nombre} ${formData.apellidos}`,
+        email: formData.correo,
+        password: formData.password,
+        role: "patient",
+        edad: formData.edad,
+        telefono: formData.telefono,
+        doctorId: formData.doctorId,
+        fechaCita: formData.fechaCita,
+        motivo: formData.motivo
+      };
+
+      await authService.register(payload);
+      alert("Registro exitoso");
+      router.push('/login');
+    } catch (error: any) {
+      alert(error.message || "Error al registrasse");
+    }
   };
 
   return (
-    <div className="flex h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md p-8 border rounded-lg shadow-lg bg-gray-900/50">
-        <h2 className="text-2xl font-bold mb-2 text-center text-white">Registro de Paciente</h2>
-        <p className="text-gray-400 text-center mb-6 text-sm">Ingresa tus datos para crear una cuenta en Medi-Agenda</p>
-        
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-300">Nombre Completo</label>
-            <input 
-              type="text" 
-              name="nombre" 
-              value={formData.nombre} 
-              onChange={handleChange} 
-              className="border border-gray-700 bg-gray-800 p-2 rounded text-white focus:outline-none focus:border-green-500"
-              placeholder="Ej. Juan Pérez"
-              required
-            />
-          </div>
-          
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-300">Correo Electrónico</label>
-            <input 
-              type="email" 
-              name="correo" 
-              value={formData.correo} 
-              onChange={handleChange} 
-              className="border border-gray-700 bg-gray-800 p-2 rounded text-white focus:outline-none focus:border-green-500"
-              placeholder="paciente@ejemplo.com"
-              required
-            />
-          </div>
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
+      <Card className="w-full max-w-2xl">
+        <CardHeader>
+          <CardTitle>Registro de Paciente</CardTitle>
+          <CardDescription>Completa el formulario para solicitar tu cita.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input name="nombre" placeholder="Nombre" required onChange={handleChange} />
+              <Input name="apellidos" placeholder="Apellidos" required onChange={handleChange} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input type="number" name="edad" placeholder="Edad" required onChange={handleChange} />
+              <Input name="telefono" placeholder="Teléfono" required onChange={handleChange} />
+            </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm text-gray-300">Contraseña</label>
-            <input 
-              type="password" 
-              name="password" 
-              value={formData.password} 
-              onChange={handleChange} 
-              className="border border-gray-700 bg-gray-800 p-2 rounded text-white focus:outline-none focus:border-green-500"
-              placeholder="••••••••"
-              required
-            />
-          </div>
+            <div className="space-y-2">
+              <Label>Médico</Label>
+              <select name="doctorId" required onChange={handleChange} className="w-full border p-2 rounded bg-white text-black">
+                <option value="">Selecciona un médico</option>
+                {doctores.map((doc) => (
+                  <option key={doc.id} value={doc.id}>{doc.name}</option>
+                ))}
+              </select>
+            </div>
 
-          <Button type="submit" className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white">
-            Crear Cuenta
-          </Button>
+            <div className="grid grid-cols-2 gap-4">
+              <Input type="datetime-local" name="fechaCita" required onChange={handleChange} />
+              <Input name="motivo" placeholder="Motivo de consulta" required onChange={handleChange} />
+            </div>
 
-          <Button 
-            type="button" 
-            variant="ghost" 
-            onClick={() => router.push('/login')}
-            className="w-full mt-2 text-gray-400 hover:text-white"
-          >
-            Cancelar y volver
-          </Button>
-        </form>
-      </div>
+            <Input type="email" name="correo" placeholder="Correo" required onChange={handleChange} />
+            <Input type="password" name="password" placeholder="Contraseña" required onChange={handleChange} />
+            
+            <Button type="submit" className="w-full">Registrar</Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
