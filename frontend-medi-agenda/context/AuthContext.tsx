@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // res.data contiene el token y el usuario según tu backend
     localStorage.setItem('token', res.data.token);
     setUser(res.data.user);
-    router.push('/dashboard');
+    router.push(res.data.user?.role === 'admin' ? '/admin' : '/dashboard');
   };
 
   const logout = () => {
