@@ -12,8 +12,9 @@ export const authService = {
     const newUser = await authRepository.createUser({
       name,
       email,
-      password: hashedPassword,
+      password_hash: hashedPassword,
       role: role || 'patient',
+      isActive: true,
       createdAt: new Date().toISOString()
     });
 
@@ -25,8 +26,10 @@ export const authService = {
     const user = await authRepository.findByEmail(email);
     if (!user) throw new AppError('Credenciales inválidas', 401);
 
-    const isMatch = await comparePassword(password, user.password);
+    const isMatch = await comparePassword(password, user.password_hash);
     if (!isMatch) throw new AppError('Credenciales inválidas', 401);
+
+    // TODO: Lo del login
 
     const token = generateToken({ id: user.id, role: user.role });
     return { token, user: { id: user.id, name: user.name, role: user.role } };

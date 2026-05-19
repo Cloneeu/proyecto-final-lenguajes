@@ -60,7 +60,7 @@ type Status = Appointment["status"]
 // Función para determinar qué opciones de cambio de estado mostrar según el rol del usuario y el estado actual de la cita
 function allowedStatusOptions(role: string, current: Status): Status[] {
   if (role === 'admin') return ['pending', 'confirmed', 'cancelled', 'completed']
-  if (role === 'reception') return [current, 'confirmed', 'cancelled'].filter((v, i, a) => a.indexOf(v) === i) as Status[]
+  if (role === 'receptionist') return [current, 'confirmed', 'cancelled'].filter((v, i, a) => a.indexOf(v) === i) as Status[]
   if (role === 'doctor') return [current, 'completed', 'cancelled'].filter((v, i, a) => a.indexOf(v) === i) as Status[]
   if (role === 'patient') return [current, 'cancelled'].filter((v, i, a) => a.indexOf(v) === i) as Status[]
   return [current]
@@ -176,7 +176,7 @@ export default function AppointmentsPage() {
   }
 
   // Permisos para mostrar el botón de creación y las opciones de eliminación según el rol del usuario
-  const canCreate = user.role === 'admin' || user.role === 'reception' || user.role === 'patient'
+  const canCreate = user.role === 'admin' || user.role === 'receptionist' || user.role === 'patient'
   const canDelete = user.role === 'admin'
 
   return (
@@ -310,7 +310,7 @@ export default function AppointmentsPage() {
           </SelectContent>
         </Select>
 
-        {(user.role === 'admin' || user.role === 'reception') && (
+        {(user.role === 'admin' || user.role === 'receptionist') && (
           <Select value={filterDoctor} onValueChange={setFilterDoctor}>
             <SelectTrigger className="w-44">
               <SelectValue placeholder="Médico" />

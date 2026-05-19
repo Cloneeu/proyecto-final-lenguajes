@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-export type Role = 'admin' | 'reception' | 'doctor' | 'patient'
+export type Role = 'admin' | 'receptionist' | 'doctor' | 'patient'
 
 export interface AuthUser {
   id: string
