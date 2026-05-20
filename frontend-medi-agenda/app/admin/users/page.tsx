@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link" // AÑADIMOS IMPORTACIÓN DE LINK PARA EL BOTÓN DE ESPECIALIDADES
 import { PlusIcon, PencilIcon, TrashIcon } from "lucide-react"
 import { usersService, type UserRecord } from "@/services/usersService"
 import { Button } from "@/components/ui/button"
@@ -34,7 +35,6 @@ import {
 const ROLES = ["admin", "doctor", "patient", "receptionist"] as const
 type Role = (typeof ROLES)[number]
 
-// Etiquetas legibles para mostrar cada rol en la interfaz
 const ROLE_LABELS: Record<Role, string> = {
   admin: "Admin",
   doctor: "Doctor",
@@ -42,7 +42,6 @@ const ROLE_LABELS: Record<Role, string> = {
   receptionist: "Recepcionista",
 }
 
-// Variantes visuales para resaltar cada rol
 const ROLE_VARIANT: Record<Role, "default" | "secondary" | "outline" | "destructive"> = {
   admin: "default",
   doctor: "secondary",
@@ -50,48 +49,55 @@ const ROLE_VARIANT: Record<Role, "default" | "secondary" | "outline" | "destruct
   receptionist: "outline",
 }
 
-// Estado inicial del formulario de creación
-const EMPTY_CREATE = { name: "", email: "", password: "", role: "patient" as Role, assignedReceptionistId: "" }
-// Estado inicial del formulario de edición
-const EMPTY_EDIT = { name: "", email: "", role: "patient" as Role, isActive: true, assignedReceptionistId: "" }
+// AÑADIMOS 'specialtyId' A LOS ESTADOS INICIALES
+const EMPTY_CREATE = { name: "", email: "", password: "", role: "patient" as Role, assignedReceptionistId: "", specialtyId: "" }
+const EMPTY_EDIT = { name: "", email: "", role: "patient" as Role, isActive: true, assignedReceptionistId: "", specialtyId: "" }
 
 export default function UsersPage() {
-  // Estado principal de la pantalla
   const [users, setUsers] = React.useState<UserRecord[]>([])
+  
+  //  ESTADO PARA GUARDAR LAS ESPECIALIDADES DEL BACKEND
+  const [specialties, setSpecialties] = React.useState<{id: string, name: string}[]>([])
+  
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
-  // Filtros para la tabla
   const [filterRole, setFilterRole] = React.useState<string>("all")
   const [filterActive, setFilterActive] = React.useState<string>("all")
   const [search, setSearch] = React.useState("")
 
-  // Estado del modal de creación
   const [createOpen, setCreateOpen] = React.useState(false)
   const [createForm, setCreateForm] = React.useState(EMPTY_CREATE)
   const [createError, setCreateError] = React.useState<string | null>(null)
   const [creating, setCreating] = React.useState(false)
 
-  // Estado del modal de edición
   const [editTarget, setEditTarget] = React.useState<UserRecord | null>(null)
   const [editForm, setEditForm] = React.useState(EMPTY_EDIT)
   const [editError, setEditError] = React.useState<string | null>(null)
   const [editing, setEditing] = React.useState(false)
 
-  // Solo recepcionistas activos pueden asignarse a doctores
   const receptionists = React.useMemo(
     () => users.filter(u => u.role === "receptionist" && u.isActive),
     [users]
   )
 
-  // Carga los usuarios desde el servicio
+  // CARGAMOS USUARIOS Y ESPECIALIDADES AL MISMO TIEMPO
   const load = React.useCallback(async () => {
     try {
       setLoading(true)
-      const data = await usersService.getAll()
-      setUsers(data)
+      const [usersData, specRes] = await Promise.all([
+        usersService.getAll(),
+        fetch('http://localhost:4000/api/specialties')
+      ])
+      
+      setUsers(usersData)
+
+      if (specRes.ok) {
+        const specData = await specRes.json()
+        setSpecialties(Array.isArray(specData) ? specData : [])
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar usuarios")
+      setError(e instanceof Error ? e.message : "Error al cargar datos")
     } finally {
       setLoading(false)
     }
@@ -101,7 +107,6 @@ export default function UsersPage() {
     load()
   }, [load])
 
-  // Aplica filtros y búsqueda a la lista de usuarios
   const filtered = React.useMemo(() => {
     return users.filter(u => {
       if (filterRole !== "all" && u.role !== filterRole) return false
@@ -115,7 +120,6 @@ export default function UsersPage() {
     })
   }, [users, filterRole, filterActive, search])
 
-  // Crea un nuevo usuario
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setCreateError(null)
@@ -127,9 +131,13 @@ export default function UsersPage() {
         password: createForm.password,
         role: createForm.role,
       }
-      if (createForm.role === "doctor" && createForm.assignedReceptionistId) {
-        dto.assignedReceptionistId = createForm.assignedReceptionistId
+      //  SI ES DOCTOR, ENVIAMOS LA ESPECIALIDAD Y RECEPCIONISTA
+      if (createForm.role === "doctor") {
+        if (createForm.assignedReceptionistId) dto.assignedReceptionistId = createForm.assignedReceptionistId
+        // Nota: Asegúrate que usersService.create soporte specialtyId si tu backend lo requiere en la colección users
+        if (createForm.specialtyId) (dto as any).specialtyId = createForm.specialtyId 
       }
+      
       await usersService.create(dto)
       setCreateOpen(false)
       setCreateForm(EMPTY_CREATE)
@@ -141,7 +149,6 @@ export default function UsersPage() {
     }
   }
 
-  // Abre el formulario de edición con los datos del usuario seleccionado
   function openEdit(user: UserRecord) {
     setEditTarget(user)
     setEditForm({
@@ -150,11 +157,11 @@ export default function UsersPage() {
       role: user.role as Role,
       isActive: user.isActive,
       assignedReceptionistId: user.assignedReceptionistId ?? "",
+      specialtyId: (user as any).specialtyId ?? "",
     })
     setEditError(null)
   }
 
-  // Guarda los cambios del usuario editado
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault()
     if (!editTarget) return
@@ -169,6 +176,7 @@ export default function UsersPage() {
       }
       if (editForm.role === "doctor") {
         dto.assignedReceptionistId = editForm.assignedReceptionistId || null
+        if (editForm.specialtyId) (dto as any).specialtyId = editForm.specialtyId
       } else {
         dto.assignedReceptionistId = null
       }
@@ -182,7 +190,6 @@ export default function UsersPage() {
     }
   }
 
-  // Alterna el estado activo/inactivo de una cuenta
   async function handleToggleActive(user: UserRecord) {
     try {
       await usersService.toggleActive(user.id, !user.isActive)
@@ -192,7 +199,6 @@ export default function UsersPage() {
     }
   }
 
-  // Asigna o quita un recepcionista a un doctor
   async function handleAssignReceptionist(doctorId: string, receptionistId: string | null) {
     try {
       await usersService.assignReceptionist(doctorId, receptionistId)
@@ -202,7 +208,6 @@ export default function UsersPage() {
     }
   }
 
-  // Elimina un usuario después de confirmar la acción
   async function handleDelete(user: UserRecord) {
     if (!confirm(`¿Eliminar a ${user.name}? Esta acción desactivará su cuenta.`)) return
     try {
@@ -215,103 +220,131 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Encabezado y acción principal. */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Usuarios</h1>
 
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusIcon className="mr-2 size-4" />
-              Nuevo usuario
+        <div className="flex gap-3">
+          {/*NUEVO BOTÓN DE ACCESO RÁPIDO A ESPECIALIDADES */}
+          <Link href="/admin/specialties">
+            <Button variant="outline" className="border-slate-300">
+              Gestionar Especialidades
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Nuevo usuario</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="c-name">Nombre</Label>
-                <Input
-                  id="c-name"
-                  value={createForm.name}
-                  onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="c-email">Correo</Label>
-                <Input
-                  id="c-email"
-                  type="email"
-                  value={createForm.email}
-                  onChange={e => setCreateForm(p => ({ ...p, email: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="c-password">Contraseña</Label>
-                <Input
-                  id="c-password"
-                  type="password"
-                  value={createForm.password}
-                  onChange={e => setCreateForm(p => ({ ...p, password: e.target.value }))}
-                  minLength={6}
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Rol</Label>
-                <Select
-                  value={createForm.role}
-                  onValueChange={v => setCreateForm(p => ({ ...p, role: v as Role, assignedReceptionistId: "" }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLES.map(r => (
-                      <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          </Link>
 
-              {createForm.role === "doctor" && (
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <PlusIcon className="mr-2 size-4" />
+                Nuevo usuario
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Nuevo usuario</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-1">
-                  <Label>Recepcionista asignada</Label>
+                  <Label htmlFor="c-name">Nombre</Label>
+                  <Input
+                    id="c-name"
+                    value={createForm.name}
+                    onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="c-email">Correo</Label>
+                  <Input
+                    id="c-email"
+                    type="email"
+                    value={createForm.email}
+                    onChange={e => setCreateForm(p => ({ ...p, email: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="c-password">Contraseña</Label>
+                  <Input
+                    id="c-password"
+                    type="password"
+                    value={createForm.password}
+                    onChange={e => setCreateForm(p => ({ ...p, password: e.target.value }))}
+                    minLength={6}
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Rol</Label>
                   <Select
-                    value={createForm.assignedReceptionistId || "__none__"}
-                    onValueChange={v =>
-                      setCreateForm(p => ({ ...p, assignedReceptionistId: v === "__none__" ? "" : v }))
-                    }
+                    value={createForm.role}
+                    onValueChange={v => setCreateForm(p => ({ ...p, role: v as Role, assignedReceptionistId: "", specialtyId: "" }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Sin asignar" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">Sin asignar</SelectItem>
-                      {receptionists.map(r => (
-                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                      {ROLES.map(r => (
+                        <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
 
-              {createError && <p className="text-sm text-destructive">{createError}</p>}
-              <DialogFooter>
-                <Button type="submit" disabled={creating}>
-                  {creating ? "Guardando..." : "Crear"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                {/* AÑADIMOS LOS CAMPOS EXTRA SI EL ROL ELEGIDO ES DOCTOR */}
+                {createForm.role === "doctor" && (
+                  <div className="grid gap-4 p-4 bg-slate-50 border rounded-lg">
+                    <div className="space-y-1">
+                      <Label className="text-slate-700">Especialidad Asignada *</Label>
+                      <Select
+                        required
+                        value={createForm.specialtyId}
+                        onValueChange={v => setCreateForm(p => ({ ...p, specialtyId: v }))}
+                      >
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="Selecciona la especialidad" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {specialties.map(spec => (
+                            <SelectItem key={spec.id} value={spec.id}>{spec.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label className="text-slate-700">Recepcionista asignada</Label>
+                      <Select
+                        value={createForm.assignedReceptionistId || "__none__"}
+                        onValueChange={v =>
+                          setCreateForm(p => ({ ...p, assignedReceptionistId: v === "__none__" ? "" : v }))
+                        }
+                      >
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="Sin asignar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Sin asignar</SelectItem>
+                          {receptionists.map(r => (
+                            <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+
+                {createError && <p className="text-sm text-destructive">{createError}</p>}
+                <DialogFooter>
+                  <Button type="submit" disabled={creating}>
+                    {creating ? "Guardando..." : "Crear"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Controles de filtrado y búsqueda. */}
       <div className="flex flex-wrap gap-3">
         <Select value={filterRole} onValueChange={setFilterRole}>
           <SelectTrigger className="w-44">
@@ -344,7 +377,6 @@ export default function UsersPage() {
         />
       </div>
 
-      {/* Tabla principal de usuarios. */}
       {loading ? (
         <p className="text-sm text-muted-foreground">Cargando...</p>
       ) : error ? (
@@ -357,6 +389,8 @@ export default function UsersPage() {
                 <TableHead>Nombre</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
+                {/* 8. NUEVA COLUMNA DE ESPECIALIDAD */}
+                <TableHead>Especialidad</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead>Recepcionista</TableHead>
                 <TableHead>Registrado</TableHead>
@@ -366,13 +400,12 @@ export default function UsersPage() {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     Sin usuarios
                   </TableCell>
                 </TableRow>
               ) : (
                 filtered.map(u => {
-                  // Nombre del recepcionista asignado, si existe.
                   const assignedRecep = u.role === "doctor" && u.assignedReceptionistId
                     ? receptionists.find(r => r.id === u.assignedReceptionistId)
                     : null
@@ -386,8 +419,19 @@ export default function UsersPage() {
                           {ROLE_LABELS[u.role as Role] ?? u.role}
                         </Badge>
                       </TableCell>
+
+                      {/* CELDA QUE MUESTRA LA ESPECIALIDAD DEL DOCTOR */}
                       <TableCell>
-                        {/* Botón para cambiar el estado del usuario. */}
+                        {u.role === "doctor" ? (
+                          <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                            {specialties.find(s => s.id === (u as any).specialtyId)?.name || "Sin asignar"}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+
+                      <TableCell>
                         <button
                           onClick={() => handleToggleActive(u)}
                           className="text-xs"
@@ -424,7 +468,6 @@ export default function UsersPage() {
                         {u.createdAt.slice(0, 10)}
                       </TableCell>
                       <TableCell className="text-right space-x-1">
-                        {/* Diálogo para editar el usuario. */}
                         <Dialog
                           open={editTarget?.id === u.id}
                           onOpenChange={open => { if (!open) setEditTarget(null) }}
@@ -434,7 +477,7 @@ export default function UsersPage() {
                               <PencilIcon className="size-3" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="sm:max-w-md">
+                          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle>Editar usuario</DialogTitle>
                             </DialogHeader>
@@ -463,7 +506,7 @@ export default function UsersPage() {
                                 <Select
                                   value={editForm.role}
                                   onValueChange={v =>
-                                    setEditForm(p => ({ ...p, role: v as Role, assignedReceptionistId: "" }))
+                                    setEditForm(p => ({ ...p, role: v as Role, assignedReceptionistId: "", specialtyId: "" }))
                                   }
                                 >
                                   <SelectTrigger>
@@ -478,27 +521,47 @@ export default function UsersPage() {
                               </div>
 
                               {editForm.role === "doctor" && (
-                                <div className="space-y-1">
-                                  <Label>Recepcionista asignada</Label>
-                                  <Select
-                                    value={editForm.assignedReceptionistId || "__none__"}
-                                    onValueChange={v =>
-                                      setEditForm(p => ({
-                                        ...p,
-                                        assignedReceptionistId: v === "__none__" ? "" : v,
-                                      }))
-                                    }
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Sin asignar" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="__none__">Sin asignar</SelectItem>
-                                      {receptionists.map(r => (
-                                        <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                <div className="grid gap-4 p-4 bg-slate-50 border rounded-lg">
+                                  <div className="space-y-1">
+                                    <Label className="text-slate-700">Especialidad Asignada</Label>
+                                    <Select
+                                      value={editForm.specialtyId || "__none__"}
+                                      onValueChange={v => setEditForm(p => ({ ...p, specialtyId: v === "__none__" ? "" : v }))}
+                                    >
+                                      <SelectTrigger className="bg-white">
+                                        <SelectValue placeholder="Selecciona la especialidad" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="__none__">Sin asignar</SelectItem>
+                                        {specialties.map(spec => (
+                                          <SelectItem key={spec.id} value={spec.id}>{spec.name}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <Label className="text-slate-700">Recepcionista asignada</Label>
+                                    <Select
+                                      value={editForm.assignedReceptionistId || "__none__"}
+                                      onValueChange={v =>
+                                        setEditForm(p => ({
+                                          ...p,
+                                          assignedReceptionistId: v === "__none__" ? "" : v,
+                                        }))
+                                      }
+                                    >
+                                      <SelectTrigger className="bg-white">
+                                        <SelectValue placeholder="Sin asignar" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="__none__">Sin asignar</SelectItem>
+                                        {receptionists.map(r => (
+                                          <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
                                 </div>
                               )}
 

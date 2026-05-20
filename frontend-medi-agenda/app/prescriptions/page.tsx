@@ -9,6 +9,10 @@ import {
   type Medication,
   prescriptionsService,
 } from "@/services/prescriptionsService"
+// AÑADIMOS EL IMPORT DE PATIENTS 
+import { usersService } from "@/services/usersService"
+
+
 import { useCurrentUser } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,11 +34,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-// Formulario vacío para crear un nuevo medicamento dentro de la receta
 const EMPTY_MED: Medication = { name: "", dose: "", frequency: "", duration: "" }
 
-// Formulario vacío para crear una nueva receta, se reinicia cada vez que se abre el diálogo
 const EMPTY_FORM: CreatePrescriptionDto = {
   patientId: "",
   doctorId: "",
@@ -47,12 +56,11 @@ const EMPTY_FORM: CreatePrescriptionDto = {
 export default function PrescriptionsPage() {
   const user = useCurrentUser()
 
-  // Estados para la lista de recetas, formulario de creación, filtros y manejo de errores
   const [prescriptions, setPrescriptions] = React.useState<Prescription[]>([])
+  const [patients, setPatients] = React.useState<{id: string, name: string}[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
-  // Estados para el formulario de creación de recetas
   const [open, setOpen] = React.useState(false)
   const [form, setForm] = React.useState<CreatePrescriptionDto>(EMPTY_FORM)
   const [submitting, setSubmitting] = React.useState(false)
@@ -60,14 +68,29 @@ export default function PrescriptionsPage() {
 
   const [filterPatient, setFilterPatient] = React.useState("")
 
-  // Carga inicial de recetas desde la API
+  // 2. ACTUALIZAMOS LA FUNCIÓN LOAD PARA USAR EL SERVICIO CON TOKEN
   const load = React.useCallback(async () => {
     try {
       setLoading(true)
-      const data = await prescriptionsService.getAll()
-      setPrescriptions(data as Prescription[])
+      // Usamos el servicio de usuarios que ya comprobamos que funciona
+      const [prescriptionsData, usersData] = await Promise.all([
+        prescriptionsService.getAll(),
+        usersService.getAll() 
+      ])
+      
+      setPrescriptions(prescriptionsData as Prescription[])
+
+      // Filtramos la lista: de todos los usuarios, solo nos quedamos con los pacientes
+      if (Array.isArray(usersData)) {
+        const onlyPatients = usersData.filter((u: any) => u.role === 'patient')
+        setPatients(onlyPatients)
+      } else {
+        setPatients([])
+      }
+      
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar recetas")
+      console.error(e) // Añadimos esto para ver errores ocultos en la terminal del navegador
+      setError(e instanceof Error ? e.message : "Error al cargar datos")
     } finally {
       setLoading(false)
     }
@@ -79,17 +102,14 @@ export default function PrescriptionsPage() {
     }
   }, [user, load])
 
-  // Estado de hidratación
   if (user === undefined) {
     return <div className="container mx-auto py-16 text-center text-muted-foreground">Cargando...</div>
   }
 
-  // Usuario no autenticado
   if (user === null) {
     return <div className="container mx-auto py-16 text-center text-muted-foreground">Inicia sesión para continuar.</div>
   }
 
-  // Recepción no tiene acceso a las recetas
   if (user.role === 'reception') {
     return (
       <div className="container mx-auto py-16 text-center space-y-2">
@@ -108,7 +128,6 @@ export default function PrescriptionsPage() {
     !filterPatient || p.patientId.toLowerCase().includes(filterPatient.toLowerCase())
   )
 
-  // Agrega o actualiza un medicamento dentro del formulario
   function updateMed(idx: number, key: keyof Medication, value: string) {
     setForm(prev => {
       const meds = [...prev.medications]
@@ -117,12 +136,10 @@ export default function PrescriptionsPage() {
     })
   }
 
-  // Añade una fila extra de medicamento
   function addMed() {
     setForm(prev => ({ ...prev, medications: [...prev.medications, { ...EMPTY_MED }] }))
   }
 
-  // Elimina una fila de medicamento
   function removeMed(idx: number) {
     setForm(prev => ({
       ...prev,
@@ -130,11 +147,8 @@ export default function PrescriptionsPage() {
     }))
   }
 
-  // Reinicia el formulario antes de abrirlo
   function resetForm() {
-    // Si por alguna razón no hay usuario, no hacer nada 
     if (!user) return;
-    // Si es doctor, se prellena su ID y no se permite editarlo
     setForm({
       ...EMPTY_FORM,
       doctorId: user.role === 'doctor' ? user.id : "",
@@ -170,7 +184,6 @@ export default function PrescriptionsPage() {
 
   return (
     <div className="container mx-auto py-8 space-y-6">
-      {/* Encabezado y creación de recetas */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Recetas</h1>
         {canCreate && (
@@ -186,18 +199,24 @@ export default function PrescriptionsPage() {
                 <DialogTitle>Nueva Receta</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="max-h-[70vh] overflow-y-auto space-y-4 pr-1">
-                {/* Datos generales de la receta */}
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <Label htmlFor="rx-patientId">ID Paciente</Label>
-                    <Input
-                      id="rx-patientId"
-                      value={form.patientId}
-                      onChange={e => setForm(p => ({ ...p, patientId: e.target.value }))}
-                      placeholder="uid-del-paciente"
-                      required
-                    />
+                    <Label>Paciente</Label>
+                    <Select required value={form.patientId} onValueChange={v => setForm(p => ({ ...p, patientId: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar paciente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {patients.map(patient => (
+                          <SelectItem key={`patient-${patient.id}`} value={patient.id}>
+                            {patient.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+                  
                   <div className="space-y-1">
                     <Label htmlFor="rx-doctorId">ID Médico</Label>
                     <Input
@@ -232,7 +251,6 @@ export default function PrescriptionsPage() {
                   />
                 </div>
 
-                {/* Lista de medicamentos */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>Medicamentos</Label>
@@ -297,7 +315,6 @@ export default function PrescriptionsPage() {
         )}
       </div>
 
-      {/* Filtro por paciente visible solo para roles con múltiples pacientes */}
       {(user.role === 'admin' || user.role === 'doctor') && (
         <div className="flex gap-3">
           <Input
@@ -309,7 +326,6 @@ export default function PrescriptionsPage() {
         </div>
       )}
 
-      {/* Tabla principal de recetas */}
       {loading ? (
         <p className="text-muted-foreground text-sm">Cargando...</p>
       ) : error ? (
@@ -337,7 +353,9 @@ export default function PrescriptionsPage() {
               ) : (
                 filtered.map(rx => (
                   <TableRow key={rx.id}>
-                    <TableCell className="font-mono text-xs">{rx.patientId}</TableCell>
+                    <TableCell className="font-medium">
+                      {patients.find(p => p.id === rx.patientId)?.name ?? rx.patientId}
+                    </TableCell>
                     {user.role !== 'patient' && (
                       <TableCell className="font-mono text-xs">{rx.doctorId}</TableCell>
                     )}
