@@ -15,9 +15,9 @@ const router = Router();
 // Todas las rutas requieren autenticación
 router.use(authenticate);
 
-// GET: admin y receptionist pueden listar/consultar usuarios
-router.get('/', authorize('admin', 'receptionist'), usersController.list);
-router.get('/:id', authorize('admin', 'receptionist'), usersController.getById);
+// GET: Todos los usuarios pueden listar/consultar usuarios
+router.get('/', authorize('admin', 'receptionist', 'patient', 'doctor'), usersController.list);
+router.get('/:id', authorize('admin', 'receptionist', 'patient', 'doctor'), usersController.getById);
 
 // POST: solo admin puede crear usuarios, receptionist solo puede crear pacientes
 router.post('/', authorize('admin'), validate(validateCreateUser), usersController.create);
