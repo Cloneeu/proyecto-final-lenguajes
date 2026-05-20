@@ -74,7 +74,7 @@ export default function PrescriptionsPage() {
   }, [])
 
   React.useEffect(() => {
-    if (user !== undefined && user !== null && user.role !== 'reception') {
+    if (user !== undefined && user !== null && user.role !== 'receptionist') {
       load()
     }
   }, [user, load])
@@ -90,7 +90,7 @@ export default function PrescriptionsPage() {
   }
 
   // Recepción no tiene acceso a las recetas
-  if (user.role === 'reception') {
+  if (user.role === 'receptionist') {
     return (
       <div className="container mx-auto py-16 text-center space-y-2">
         <p className="text-lg font-semibold">Sin permisos</p>

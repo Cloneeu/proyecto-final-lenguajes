@@ -3,7 +3,9 @@ import { hashPassword, comparePassword, generateToken } from '../../utils/authUt
 import { AppError } from '../../utils/AppError.js';
 
 export const authService = {
-  async register({ email, password, name, role }) {
+    async register(data) {
+    const { email, password, name, role, ...extraData } = data;
+    
     const existingUser = await authRepository.findByEmail(email);
     if (existingUser) throw new AppError('El usuario ya existe', 400);
 
@@ -17,6 +19,32 @@ export const authService = {
       isActive: true,
       createdAt: new Date().toISOString()
     });
+
+    // Si es un paciente y envió datos de cita, la creamos automáticamente como pendiente
+    if (newUser.role === 'patient' && extraData.doctorId && extraData.fechaCita) {
+      const { appointmentsRepository } = await import('../appointments/appointments.repository.js');
+      
+      // Separar fecha y hora si vienen juntas (formato datetime-local)
+      const [date, fullTime] = extraData.fechaCita.split('T');
+      const startTime = fullTime ? fullTime.substring(0, 5) : "00:00";
+      
+      // Calcular una hora de fin genérica (30 min después)
+      const [h, m] = startTime.split(':').map(Number);
+      const endM = (m + 30) % 60;
+      const endH = h + Math.floor((m + 30) / 60);
+      const endTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+
+      await appointmentsRepository.create({
+        patientId: newUser.id,
+        doctorId: extraData.doctorId,
+        date: date,
+        startTime: startTime,
+        endTime: endTime,
+        reason: extraData.motivo || 'Primera cita (Registro)',
+        status: 'pending', // <--- Clave para la recepcionista
+        notes: `Teléfono: ${extraData.telefono || 'No provisto'}. Edad: ${extraData.edad || '?'}`
+      });
+    }
 
     const token = generateToken({ id: newUser.id, role: newUser.role });
     return { token, user: { id: newUser.id, name: newUser.name, role: newUser.role } };
