@@ -15,8 +15,8 @@ router.get('/', appointmentsController.getAll);
 router.get('/:id', appointmentsController.getById);
 
 // Creación y modificación restringidas por rol
-router.post('/', authorize('admin', 'reception', 'patient'), validate(validateCreateAppointment), appointmentsController.create);
-router.put('/:id', authorize('admin', 'reception'), appointmentsController.update);
+router.post('/', authorize('admin', 'receptionist', 'patient'), validate(validateCreateAppointment), appointmentsController.create);
+router.put('/:id', authorize('admin', 'receptionist'), appointmentsController.update);
 
 // El cambio de estado usa una validación específica del payload
 router.patch('/:id/status', validate(validateUpdateStatus), appointmentsController.updateStatus);

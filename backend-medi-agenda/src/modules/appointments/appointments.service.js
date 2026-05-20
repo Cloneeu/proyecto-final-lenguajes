@@ -23,8 +23,8 @@ async function assertNoConflict(doctorId, date, startTime, endTime, excludeId = 
 function assertStatusTransition(currentStatus, newStatus, role) {
   // El administrador puede hacer cualquier cambio de estado.
   if (role === 'admin') return;
-  // Recepción solo maneja confirmación o cancelación
-  if (role === 'reception' && ['confirmed', 'cancelled'].includes(newStatus)) return;
+    // Recepción solo maneja confirmación o cancelación
+  if (role === 'receptionist' && ['confirmed', 'cancelled'].includes(newStatus)) return;
   // El doctor puede marcar como completada o cancelada
   if (role === 'doctor' && ['completed', 'cancelled'].includes(newStatus)) return;
   // El paciente solo puede cancelar su propia cita
@@ -43,11 +43,29 @@ function assertOwnership(appt, user) {
 }
 
 export const appointmentsService = {
-  async getAll(user) {
-    // Cada rol ve sus citas
+    async getAll(user) {
+    // El administrador ve todo
+    if (user.role === 'admin') return appointmentsRepository.findAll();
+    
+    // El doctor ve sus citas
     if (user.role === 'doctor') return appointmentsRepository.findByDoctor(user.id);
+    
+    // El paciente ve sus citas
     if (user.role === 'patient') return appointmentsRepository.findByPatient(user.id);
-    return appointmentsRepository.findAll();
+    
+    // La recepcionista ve las citas de los doctores que tiene asignados
+    if (user.role === 'receptionist') {
+      const { usersRepository } = await import('../users/users.repository.js');
+      const assignedDoctors = await usersRepository.findDoctorsByReceptionist(user.id);
+      const doctorIds = assignedDoctors.map(d => d.id);
+      
+      if (doctorIds.length === 0) return [];
+      
+      const allAppts = await appointmentsRepository.findAll();
+      return allAppts.filter(a => doctorIds.includes(a.doctorId));
+    }
+
+    return [];
   },
 
   async getById(id, user) {

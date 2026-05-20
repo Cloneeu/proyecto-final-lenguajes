@@ -9,7 +9,8 @@ import {
   ShieldIcon,
   LogOutIcon,
 } from "lucide-react"
-import { useCurrentUser } from "@/lib/auth"
+// Cambiamos la importación para usar tu contexto global en lugar de useCurrentUser
+import { useAuth } from "@/context/AuthContext"
 import {
   SidebarProvider,
   Sidebar,
@@ -25,7 +26,6 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
 
 // Elementos de navegación disponibles en el sidebar para el admin
 const NAV_ITEMS = [
@@ -35,7 +35,8 @@ const NAV_ITEMS = [
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = useCurrentUser()
+  // Extraemos user y logout directamente del AuthContext
+  const { user, logout } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -57,10 +58,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Si la sesión no es válida o el rol no corresponde, no se renderiza el layout
   if (user === null || user.role !== "admin") return null
 
-  function handleLogout() {
-    // Borra el token guardado y retorna al formulario de acceso
-    localStorage.removeItem("token")
-    router.push("/login")
+  // Nueva función de cierre de sesión seguro
+  async function handleLogout() {
+    try {
+      if (logout) {
+        await logout() // Esto limpia tanto el token como el estado de React
+      } else {
+        localStorage.removeItem("token") // Respaldo por si acaso
+      }
+      router.push("/login")
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error)
+    }
   }
 
   return (
