@@ -5,6 +5,13 @@ export const specialtiesRepository = {
         const snapshot = await db.collection('specialties').get();
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     },
+    findById: async (id) => {
+        const doc = await db.collection('specialties').doc(id).get();
+        if (!doc.exists) {
+            return null;
+        }
+        return { id: doc.id, ...doc.data() };
+    },
     create: async (name) => {
         const newSpecialty = { name, createdAt: new Date().toISOString() };
         const docRef = await db.collection('specialties').add(newSpecialty);
