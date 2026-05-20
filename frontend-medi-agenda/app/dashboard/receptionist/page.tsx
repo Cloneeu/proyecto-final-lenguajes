@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useAuth } from "@/context/AuthContext"
+import { useRouter } from "next/navigation"
 import { appointmentsService, type Appointment } from "@/services/appointmentsService"
 import { usersService, type UserRecord } from "@/services/usersService"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,10 +16,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { CalendarIcon, UserIcon, ClockIcon, CheckCircle2, XCircle } from "lucide-react"
+import { CalendarIcon, UserIcon, ClockIcon, CheckCircle2, XCircle, LogOut } from "lucide-react"
 
 export default function ReceptionistDashboard() {
-  const { user } = useAuth()
+  const router = useRouter()
+  // Extraemos la función logout del contexto
+  const { user, logout } = useAuth()
   const [appointments, setAppointments] = React.useState<Appointment[]>([])
   const [patients, setPatients] = React.useState<UserRecord[]>([])
   const [doctors, setDoctors] = React.useState<UserRecord[]>([])
@@ -56,6 +59,18 @@ export default function ReceptionistDashboard() {
     }
   }
 
+  // Función para manejar el cierre de sesión
+  const handleLogout = async () => {
+    try {
+      if (logout) {
+        await logout()
+      }
+      router.push('/login')
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error)
+    }
+  }
+
   const pendingAppointments = appointments.filter(a => a.status === 'pending')
   const todayAppointments = appointments.filter(a => {
     const today = new Date().toISOString().split('T')[0]
@@ -66,10 +81,17 @@ export default function ReceptionistDashboard() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Encabezado modificado con el botón de cerrar sesión */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Panel de Recepción</h1>
-        <div className="text-sm text-muted-foreground">
-          Bienvenido, {user?.name}
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Bienvenido, {user?.name}
+          </div>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="size-4 mr-2" />
+            Cerrar Sesión
+          </Button>
         </div>
       </div>
 
@@ -117,13 +139,14 @@ export default function ReceptionistDashboard() {
                   <TableHead>Paciente</TableHead>
                   <TableHead>Doctor</TableHead>
                   <TableHead>Fecha/Hora</TableHead>
+                  <TableHead>Datos de Contacto / Motivo</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {pendingAppointments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
                       No hay solicitudes pendientes
                     </TableCell>
                   </TableRow>
@@ -140,7 +163,17 @@ export default function ReceptionistDashboard() {
                         <div className="text-xs">{appt.date}</div>
                         <div className="text-xs text-muted-foreground">{appt.startTime}</div>
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
+                      
+                      <TableCell className="max-w-[200px]">
+                        <div className="text-xs font-semibold truncate" title={appt.reason}>
+                          {appt.reason}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate" title={appt.notes}>
+                          {appt.notes}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-right space-x-2 min-w-[220px]">
                         <Button 
                           size="sm" 
                           variant="outline" 
@@ -157,45 +190,6 @@ export default function ReceptionistDashboard() {
                         >
                           <XCircle className="size-4 mr-1" /> Rechazar
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Agenda del Día */}
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Agenda del Día</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Hora</TableHead>
-                  <TableHead>Paciente</TableHead>
-                  <TableHead>Doctor</TableHead>
-                  <TableHead>Estado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {todayAppointments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
-                      No hay citas confirmadas para hoy
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  todayAppointments.map((appt) => (
-                    <TableRow key={appt.id}>
-                      <TableCell className="font-medium">{appt.startTime}</TableCell>
-                      <TableCell>{patients.find(p => p.id === appt.patientId)?.name}</TableCell>
-                      <TableCell>{doctors.find(d => d.id === appt.doctorId)?.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">Confirmada</Badge>
                       </TableCell>
                     </TableRow>
                   ))
