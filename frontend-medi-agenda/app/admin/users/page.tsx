@@ -31,10 +31,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 
+// Tamaño fijo de página para el listado!!!!!!
+const PAGE_SIZE = 10
+
+// Calcula la secuencia de páginas a mostrar en la paginación
+// Genera un array con los números de página a visualizar, incluyendo "ellipsis",
+// apenas aprendi como se llamaban los tres puntitos (...) :P 
+// cuando hay espacios grandes entre páginas. Muestra siempre la primera y última página,
+// y 1-2 páginas alrededor de la página actual para navegación rápida
+function buildPageItems(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const items: (number | "ellipsis")[] = [1]
+  if (current > 3) items.push("ellipsis")
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  for (let i = start; i <= end; i++) items.push(i)
+  if (current < total - 2) items.push("ellipsis")
+  items.push(total)
+  return items
+}
+
+// Los roles que manejamos hasta el momento
 const ROLES = ["admin", "doctor", "patient", "receptionist"] as const
 type Role = (typeof ROLES)[number]
 
+// Mapeo de etiquetas legibles para cada rol
 const ROLE_LABELS: Record<Role, string> = {
   admin: "Admin",
   doctor: "Doctor",
@@ -42,6 +73,7 @@ const ROLE_LABELS: Record<Role, string> = {
   receptionist: "Recepcionista",
 }
 
+// Mapeo de variantes de badge para cada rol
 const ROLE_VARIANT: Record<Role, "default" | "secondary" | "outline" | "destructive"> = {
   admin: "default",
   doctor: "secondary",
@@ -55,16 +87,26 @@ const EMPTY_EDIT = { name: "", email: "", role: "patient" as Role, isActive: tru
 
 export default function UsersPage() {
   const [users, setUsers] = React.useState<UserRecord[]>([])
-  
+
   //  ESTADO PARA GUARDAR LAS ESPECIALIDADES DEL BACKEND
-  const [specialties, setSpecialties] = React.useState<{id: string, name: string}[]>([])
-  
+  const [specialties, setSpecialties] = React.useState<{ id: string, name: string }[]>([])
+
+  // Lista completa de recepcionistas para selects (independiente de la paginación)
+  const [receptionistsList, setReceptionistsList] = React.useState<UserRecord[]>([])
+
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
   const [filterRole, setFilterRole] = React.useState<string>("all")
   const [filterActive, setFilterActive] = React.useState<string>("all")
   const [search, setSearch] = React.useState("")
+  // Valor de búsqueda con debounce que dispara los fetches
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
+
+  // Estado de paginación
+  const [page, setPage] = React.useState(1)
+  const [totalPages, setTotalPages] = React.useState(1)
+  const [total, setTotal] = React.useState(0)
 
   const [createOpen, setCreateOpen] = React.useState(false)
   const [createForm, setCreateForm] = React.useState(EMPTY_CREATE)
@@ -76,49 +118,72 @@ export default function UsersPage() {
   const [editError, setEditError] = React.useState<string | null>(null)
   const [editing, setEditing] = React.useState(false)
 
+  // Recepcionistas activas obtenidas de la lista completa
   const receptionists = React.useMemo(
-    () => users.filter(u => u.role === "receptionist" && u.isActive),
-    [users]
+    () => receptionistsList.filter(u => u.isActive),
+    [receptionistsList]
   )
 
-  // CARGAMOS USUARIOS Y ESPECIALIDADES AL MISMO TIEMPO
+  // Aplica debounce sobre el texto de búsqueda para no martillar el backend
+  React.useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(handle)
+  }, [search])
+
+  // Resetea a la primera página cuando cambian los filtros
+  React.useEffect(() => {
+    setPage(1)
+  }, [filterRole, filterActive, debouncedSearch])
+
+  // Carga la página de usuarios solicitada usando los filtros actuales
   const load = React.useCallback(async () => {
     try {
       setLoading(true)
-      const [usersData, specRes] = await Promise.all([
-        usersService.getAll(),
-        fetch('http://localhost:4000/api/specialties')
+      const isActiveValue =
+        filterActive === "active" ? true : filterActive === "inactive" ? false : undefined
+      const roleValue = filterRole !== "all" ? filterRole : undefined
+
+      const [paginatedRes, specRes, recepData] = await Promise.all([
+        usersService.getPaginated({
+          page,
+          pageSize: PAGE_SIZE,
+          role: roleValue,
+          isActive: isActiveValue,
+          search: debouncedSearch || undefined,
+        }),
+        fetch('http://localhost:4000/api/specialties'),
+        // Lista completa de recepcionistas para los selects de asignación
+        usersService.getAll({ role: 'receptionist' }),
       ])
-      
-      setUsers(usersData)
+
+      // Procesamos la respuesta paginada y actualizamos el estado de usuarios y paginación
+      const paginated = paginatedRes as {
+        data: UserRecord[]
+        total: number
+        page: number
+        pageSize: number
+        totalPages: number
+      }
+      setUsers(paginated.data ?? [])
+      setTotal(paginated.total ?? 0)
+      setTotalPages(paginated.totalPages ?? 1)
 
       if (specRes.ok) {
         const specData = await specRes.json()
         setSpecialties(Array.isArray(specData) ? specData : [])
       }
+
+      setReceptionistsList(Array.isArray(recepData) ? (recepData as UserRecord[]) : [])
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar datos")
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [page, filterRole, filterActive, debouncedSearch])
 
   React.useEffect(() => {
     load()
   }, [load])
-
-  const filtered = React.useMemo(() => {
-    return users.filter(u => {
-      if (filterRole !== "all" && u.role !== filterRole) return false
-      if (filterActive === "active" && !u.isActive) return false
-      if (filterActive === "inactive" && u.isActive) return false
-      if (search) {
-        const q = search.toLowerCase()
-        if (!u.name.toLowerCase().includes(q) && !u.email.toLowerCase().includes(q)) return false
-      }
-      return true
-    })
-  }, [users, filterRole, filterActive, search])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -135,9 +200,9 @@ export default function UsersPage() {
       if (createForm.role === "doctor") {
         if (createForm.assignedReceptionistId) dto.assignedReceptionistId = createForm.assignedReceptionistId
         // Nota: Asegúrate que usersService.create soporte specialtyId si tu backend lo requiere en la colección users
-        if (createForm.specialtyId) (dto as any).specialtyId = createForm.specialtyId 
+        if (createForm.specialtyId) (dto as any).specialtyId = createForm.specialtyId
       }
-      
+
       await usersService.create(dto)
       setCreateOpen(false)
       setCreateForm(EMPTY_CREATE)
@@ -387,225 +452,291 @@ export default function UsersPage() {
       ) : error ? (
         <p className="text-sm text-destructive">{error}</p>
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Rol</TableHead>
-                {/* 8. NUEVA COLUMNA DE ESPECIALIDAD */}
-                <TableHead>Especialidad</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Recepcionista</TableHead>
-                <TableHead>Registrado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
+        <>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
-                    Sin usuarios
-                  </TableCell>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Rol</TableHead>
+                  {/* 8. NUEVA COLUMNA DE ESPECIALIDAD */}
+                  <TableHead>Especialidad</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Recepcionista</TableHead>
+                  <TableHead>Registrado</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
-              ) : (
-                filtered.map(u => {
-                  const assignedRecep = u.role === "doctor" && u.assignedReceptionistId
-                    ? receptionists.find(r => r.id === u.assignedReceptionistId)
-                    : null
+              </TableHeader>
+              <TableBody>
+                {users.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                      Sin usuarios
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  users.map(u => {
+                    const assignedRecep = u.role === "doctor" && u.assignedReceptionistId
+                      ? receptionists.find(r => r.id === u.assignedReceptionistId)
+                      : null
 
-                  return (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">{u.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={ROLE_VARIANT[u.role as Role] ?? "outline"}>
-                          {ROLE_LABELS[u.role as Role] ?? u.role}
-                        </Badge>
-                      </TableCell>
-
-                      {/* CELDA QUE MUESTRA LA ESPECIALIDAD DEL DOCTOR */}
-                      <TableCell>
-                        {u.role === "doctor" ? (
-                          <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
-                            {specialties.find(s => s.id === (u as any).specialtyId)?.name || "Sin asignar"}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        <button
-                          onClick={() => handleToggleActive(u)}
-                          className="text-xs"
-                          title="Click para cambiar estado"
-                        >
-                          <Badge variant={u.isActive ? "secondary" : "destructive"}>
-                            {u.isActive ? "Activo" : "Inactivo"}
+                    return (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">{u.name}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={ROLE_VARIANT[u.role as Role] ?? "outline"}>
+                            {ROLE_LABELS[u.role as Role] ?? u.role}
                           </Badge>
-                        </button>
-                      </TableCell>
-                      <TableCell>
-                        {u.role === "doctor" ? (
-                          <Select
-                            value={u.assignedReceptionistId ?? "__none__"}
-                            onValueChange={v =>
-                              handleAssignReceptionist(u.id, v === "__none__" ? null : v)
-                            }
+                        </TableCell>
+
+                        {/* CELDA QUE MUESTRA LA ESPECIALIDAD DEL DOCTOR */}
+                        <TableCell>
+                          {u.role === "doctor" ? (
+                            <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                              {specialties.find(s => s.id === (u as any).specialtyId)?.name || "Sin asignar"}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
+                        <TableCell>
+                          <button
+                            onClick={() => handleToggleActive(u)}
+                            className="text-xs"
+                            title="Click para cambiar estado"
                           >
-                            <SelectTrigger className="h-7 w-40 text-xs">
-                              <SelectValue placeholder="Sin asignar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__">Sin asignar</SelectItem>
-                              {receptionists.map(r => (
-                                <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {u.createdAt.slice(0, 10)}
-                      </TableCell>
-                      <TableCell className="text-right space-x-1">
-                        <Dialog
-                          open={editTarget?.id === u.id}
-                          onOpenChange={open => { if (!open) setEditTarget(null) }}
-                        >
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => openEdit(u)}>
-                              <PencilIcon className="size-3" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Editar usuario</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleEdit} className="space-y-4">
-                              <div className="space-y-1">
-                                <Label htmlFor="e-name">Nombre</Label>
-                                <Input
-                                  id="e-name"
-                                  value={editForm.name}
-                                  onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
-                                  required
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label htmlFor="e-email">Correo</Label>
-                                <Input
-                                  id="e-email"
-                                  type="email"
-                                  value={editForm.email}
-                                  onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
-                                  required
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label>Rol</Label>
-                                <Select
-                                  value={editForm.role}
-                                  onValueChange={v =>
-                                    setEditForm(p => ({ ...p, role: v as Role, assignedReceptionistId: "", specialtyId: "" }))
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {ROLES.map(r => (
-                                      <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              {editForm.role === "doctor" && (
-                                <div className="grid gap-4 p-4 bg-slate-50 border rounded-lg">
-                                  <div className="space-y-1">
-                                    <Label className="text-slate-700">Especialidad Asignada</Label>
-                                    <Select
-                                      value={editForm.specialtyId || "__none__"}
-                                      onValueChange={v => setEditForm(p => ({ ...p, specialtyId: v === "__none__" ? "" : v }))}
-                                    >
-                                      <SelectTrigger className="bg-white">
-                                        <SelectValue placeholder="Selecciona la especialidad" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="__none__">Sin asignar</SelectItem>
-                                        {specialties.map(spec => (
-                                          <SelectItem key={spec.id} value={spec.id}>{spec.name}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-
-                                  <div className="space-y-1">
-                                    <Label className="text-slate-700">Recepcionista asignada</Label>
-                                    <Select
-                                      value={editForm.assignedReceptionistId || "__none__"}
-                                      onValueChange={v =>
-                                        setEditForm(p => ({
-                                          ...p,
-                                          assignedReceptionistId: v === "__none__" ? "" : v,
-                                        }))
-                                      }
-                                    >
-                                      <SelectTrigger className="bg-white">
-                                        <SelectValue placeholder="Sin asignar" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="__none__">Sin asignar</SelectItem>
-                                        {receptionists.map(r => (
-                                          <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
+                            <Badge variant={u.isActive ? "secondary" : "destructive"}>
+                              {u.isActive ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </button>
+                        </TableCell>
+                        <TableCell>
+                          {u.role === "doctor" ? (
+                            <Select
+                              value={u.assignedReceptionistId ?? "__none__"}
+                              onValueChange={v =>
+                                handleAssignReceptionist(u.id, v === "__none__" ? null : v)
+                              }
+                            >
+                              <SelectTrigger className="h-7 w-40 text-xs">
+                                <SelectValue placeholder="Sin asignar" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__">Sin asignar</SelectItem>
+                                {receptionists.map(r => (
+                                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {u.createdAt.slice(0, 10)}
+                        </TableCell>
+                        <TableCell className="text-right space-x-1">
+                          <Dialog
+                            open={editTarget?.id === u.id}
+                            onOpenChange={open => { if (!open) setEditTarget(null) }}
+                          >
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" onClick={() => openEdit(u)}>
+                                <PencilIcon className="size-3" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Editar usuario</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={handleEdit} className="space-y-4">
+                                <div className="space-y-1">
+                                  <Label htmlFor="e-name">Nombre</Label>
+                                  <Input
+                                    id="e-name"
+                                    value={editForm.name}
+                                    onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))}
+                                    required
+                                  />
                                 </div>
-                              )}
+                                <div className="space-y-1">
+                                  <Label htmlFor="e-email">Correo</Label>
+                                  <Input
+                                    id="e-email"
+                                    type="email"
+                                    value={editForm.email}
+                                    onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}
+                                    required
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label>Rol</Label>
+                                  <Select
+                                    value={editForm.role}
+                                    onValueChange={v =>
+                                      setEditForm(p => ({ ...p, role: v as Role, assignedReceptionistId: "", specialtyId: "" }))
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {ROLES.map(r => (
+                                        <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
 
-                              <div className="flex items-center gap-2">
-                                <input
-                                  id="e-active"
-                                  type="checkbox"
-                                  checked={editForm.isActive}
-                                  onChange={e => setEditForm(p => ({ ...p, isActive: e.target.checked }))}
-                                  className="size-4"
-                                />
-                                <Label htmlFor="e-active">Cuenta activa</Label>
-                              </div>
+                                {editForm.role === "doctor" && (
+                                  <div className="grid gap-4 p-4 bg-slate-50 border rounded-lg">
+                                    <div className="space-y-1">
+                                      <Label className="text-slate-700">Especialidad Asignada</Label>
+                                      <Select
+                                        value={editForm.specialtyId || "__none__"}
+                                        onValueChange={v => setEditForm(p => ({ ...p, specialtyId: v === "__none__" ? "" : v }))}
+                                      >
+                                        <SelectTrigger className="bg-white">
+                                          <SelectValue placeholder="Selecciona la especialidad" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="__none__">Sin asignar</SelectItem>
+                                          {specialties.map(spec => (
+                                            <SelectItem key={spec.id} value={spec.id}>{spec.name}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
 
-                              {editError && <p className="text-sm text-destructive">{editError}</p>}
-                              <DialogFooter>
-                                <Button type="submit" disabled={editing}>
-                                  {editing ? "Guardando..." : "Guardar cambios"}
-                                </Button>
-                              </DialogFooter>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
+                                    <div className="space-y-1">
+                                      <Label className="text-slate-700">Recepcionista asignada</Label>
+                                      <Select
+                                        value={editForm.assignedReceptionistId || "__none__"}
+                                        onValueChange={v =>
+                                          setEditForm(p => ({
+                                            ...p,
+                                            assignedReceptionistId: v === "__none__" ? "" : v,
+                                          }))
+                                        }
+                                      >
+                                        <SelectTrigger className="bg-white">
+                                          <SelectValue placeholder="Sin asignar" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="__none__">Sin asignar</SelectItem>
+                                          {receptionists.map(r => (
+                                            <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                )}
 
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(u)}
-                        >
-                          <TrashIcon className="size-3" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    id="e-active"
+                                    type="checkbox"
+                                    checked={editForm.isActive}
+                                    onChange={e => setEditForm(p => ({ ...p, isActive: e.target.checked }))}
+                                    className="size-4"
+                                  />
+                                  <Label htmlFor="e-active">Cuenta activa</Label>
+                                </div>
+
+                                {editError && <p className="text-sm text-destructive">{editError}</p>}
+                                <DialogFooter>
+                                  <Button type="submit" disabled={editing}>
+                                    {editing ? "Guardando..." : "Guardar cambios"}
+                                  </Button>
+                                </DialogFooter>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(u)}
+                          >
+                            <TrashIcon className="size-3" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Controles de paginación y contador de resultados */}
+          {total > 0 && (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {(page - 1) * PAGE_SIZE + 1}
+                {"-"}
+                {Math.min(page * PAGE_SIZE, total)} de {total} usuarios
+              </p>
+
+              {totalPages > 1 && (
+                <Pagination className="mx-0 sm:justify-end">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        text="Anterior"
+                        aria-disabled={page === 1}
+                        className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                        onClick={e => {
+                          e.preventDefault()
+                          if (page > 1) setPage(page - 1)
+                        }}
+                      />
+                    </PaginationItem>
+
+                    {buildPageItems(page, totalPages).map((item, idx) =>
+                      item === "ellipsis" ? (
+                        <PaginationItem key={`e-${idx}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={item}>
+                          <PaginationLink
+                            href="#"
+                            isActive={item === page}
+                            onClick={e => {
+                              e.preventDefault()
+                              setPage(item)
+                            }}
+                          >
+                            {item}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    )}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        text="Siguiente"
+                        aria-disabled={page === totalPages}
+                        className={page === totalPages ? "pointer-events-none opacity-50" : ""}
+                        onClick={e => {
+                          e.preventDefault()
+                          if (page < totalPages) setPage(page + 1)
+                        }}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               )}
-            </TableBody>
-          </Table>
-        </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

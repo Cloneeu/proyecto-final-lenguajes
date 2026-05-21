@@ -46,6 +46,15 @@ export interface UpdateUserDto {
   assignedReceptionistId?: string | null;
 }
 
+// Respuesta del listado paginado
+export interface PaginatedUsersResponse {
+  data: UserRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 export const usersService = {
   // Obtiene la lista de usuarios con filtros opcionales
   getAll(filters?: { role?: string; isActive?: boolean; search?: string }): Promise<UserRecord[] | unknown> {
@@ -55,6 +64,25 @@ export const usersService = {
     if (filters?.search) params.set('search', filters.search);
     const qs = params.toString();
     return fetch(`${API_BASE}/users${qs ? `?${qs}` : ''}`, { headers: authHeaders() }).then(handleResponse);
+  },
+
+  // Obtiene la lista paginada de usuarios para la vista de administración
+  getPaginated(params: {
+    page: number;
+    pageSize: number;
+    role?: string;
+    isActive?: boolean;
+    search?: string;
+  }): Promise<PaginatedUsersResponse | unknown> {
+    const qs = new URLSearchParams();
+    qs.set('page', String(params.page));
+    qs.set('pageSize', String(params.pageSize));
+    if (params.role) qs.set('role', params.role);
+    if (params.isActive !== undefined) qs.set('isActive', String(params.isActive));
+    if (params.search) qs.set('search', params.search);
+    return fetch(`${API_BASE}/users/paginated?${qs.toString()}`, { headers: authHeaders() }).then(
+      handleResponse,
+    );
   },
 
   // Obtiene un usuario por su identificador.
