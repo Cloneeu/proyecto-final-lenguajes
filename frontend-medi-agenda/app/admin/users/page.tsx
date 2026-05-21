@@ -149,6 +149,7 @@ export default function UsersPage() {
     }
   }
 
+  // CUANDO ABRIMOS EL FORMULARIO DE EDICIÓN, CARGAMOS LOS DATOS DEL USUARIO EN EL ESTADO, INCLUYENDO ESPECIALIDAD Y RECEPCIONISTA SI ES DOCTOR
   function openEdit(user: UserRecord) {
     setEditTarget(user)
     setEditForm({
@@ -162,6 +163,7 @@ export default function UsersPage() {
     setEditError(null)
   }
 
+  // EN EL HANDLE EDIT, TAMBIÉN ENVIAMOS LOS CAMBIOS DE ESPECIALIDAD Y RECEPCIONISTA SI EL ROL ES DOCTOR
   async function handleEdit(e: React.FormEvent) {
     e.preventDefault()
     if (!editTarget) return
@@ -175,8 +177,8 @@ export default function UsersPage() {
         isActive: editForm.isActive,
       }
       if (editForm.role === "doctor") {
-        dto.assignedReceptionistId = editForm.assignedReceptionistId || null
-        if (editForm.specialtyId) (dto as any).specialtyId = editForm.specialtyId
+        dto.assignedReceptionistId = editForm.assignedReceptionistId || null;
+        (dto as any).specialtyId = editForm.specialtyId || null
       } else {
         dto.assignedReceptionistId = null
       }
@@ -190,6 +192,7 @@ export default function UsersPage() {
     }
   }
 
+  // FUNCION PARA TOGGLEAR EL ESTADO ACTIVO/INACTIVO DE UN USUARIO, SOLO ENVIAMOS EL CAMBIO DE ESTADO, EL BACKEND SE ENCARGA DE MANTENER LOS DEMÁS CAMPOS
   async function handleToggleActive(user: UserRecord) {
     try {
       await usersService.toggleActive(user.id, !user.isActive)
@@ -199,6 +202,7 @@ export default function UsersPage() {
     }
   }
 
+  // FUNCION PARA ASIGNAR O CAMBIAR LA RECEPCIONISTA DE UN DOCTOR DESDE LA TABLA, SOLO ENVIAMOS EL ID DE LA RECEPCIONISTA, EL BACKEND SE ENCARGA DE VALIDAR Y ACTUALIZAR
   async function handleAssignReceptionist(doctorId: string, receptionistId: string | null) {
     try {
       await usersService.assignReceptionist(doctorId, receptionistId)
@@ -208,6 +212,7 @@ export default function UsersPage() {
     }
   }
 
+  // FUNCION PARA ELIMINAR UN USUARIO, SOLO ENVIAMOS SU ID, EL BACKEND SE ENCARGA DE DESACTIVARLO
   async function handleDelete(user: UserRecord) {
     if (!confirm(`¿Eliminar a ${user.name}? Esta acción desactivará su cuenta.`)) return
     try {
