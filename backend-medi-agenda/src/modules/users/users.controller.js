@@ -13,6 +13,16 @@ export const usersController = {
     }
   },
 
+  // Obtiene el listado paginado de usuarios para la vista de administración
+  async listPaginated(req, res, next) {
+    try {
+      const data = await usersService.listPaginated(req.query);
+      sendSuccess(res, data);
+    } catch (err) {
+      next(err);
+    }
+  },
+
   // Devuelve un usuario específico por su identificador
   async getById(req, res, next) {
     try {
