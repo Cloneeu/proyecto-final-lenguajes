@@ -17,6 +17,8 @@ router.use(authenticate);
 
 // GET: Todos los usuarios pueden listar/consultar usuarios
 router.get('/', authorize('admin', 'receptionist', 'patient', 'doctor'), usersController.list);
+// Endpoint paginado para obtener usuarios, por ahora solo lo dejé para los admins
+router.get('/paginated', authorize('admin'), usersController.listPaginated);
 router.get('/:id', authorize('admin', 'receptionist', 'patient', 'doctor'), usersController.getById);
 
 // POST: solo admin puede crear usuarios, receptionist solo puede crear pacientes

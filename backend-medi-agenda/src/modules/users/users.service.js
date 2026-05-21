@@ -29,6 +29,24 @@ export const usersService = {
     return usersRepository.findAll({ role, isActive: parsedIsActive, search });
   },
 
+  // Devuelve la lista paginada de usuarios, tambien acepta filtros
+  async listPaginated(filters) {
+    const { role, isActive, search, page, pageSize } = filters ?? {};
+    // Convierte isActive a booleano si llega como string desde la query
+    const parsedIsActive = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+    // Parsea y clampea page para evitar valores inválidos
+    const parsedPage = Math.max(1, parseInt(page, 10) || 1);
+    // Parsea y valida pageSize para evitar valores extremos que puedan afectar el rendimiento
+    const parsedPageSize = Math.min(50, Math.max(1, parseInt(pageSize, 10) || 10));
+    return usersRepository.findPaginated({
+      role,
+      isActive: parsedIsActive,
+      search,
+      page: parsedPage,
+      pageSize: parsedPageSize,
+    });
+  },
+
   // Busca un usuario por su ID
   async getById(id) {
     const user = await usersRepository.findById(id);

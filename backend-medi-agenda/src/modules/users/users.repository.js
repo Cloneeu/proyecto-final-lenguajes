@@ -79,4 +79,35 @@ export const usersRepository = {
       .get();
     return snap.docs.map(doc => sanitizeUser({ id: doc.id, ...doc.data() }));
   },
+
+  // Devuelve usuarios paginados aplicando filtros
+  async findPaginated({ role, isActive, search, page, pageSize } = {}) {
+    // Construye la consulta base aplicando los filtros soportados por Firestore :)
+    let query = db.collection(COLLECTION);
+    if (role !== undefined) query = query.where('role', '==', role);
+    if (isActive !== undefined) query = query.where('isActive', '==', isActive);
+
+    // Trae los documentos que coinciden con role/isActive
+    const snap = await query.get();
+    let results = snap.docs.map(doc => sanitizeUser({ id: doc.id, ...doc.data() }));
+
+    // Aplica el filtro de búsqueda en memoria porque Firestore no soporta substring
+    if (search) {
+      const lower = search.toLowerCase();
+      results = results.filter(
+        u => u.name?.toLowerCase().includes(lower) || u.email?.toLowerCase().includes(lower)
+      );
+    }
+
+    // Ordena por fecha de creación dejando primero los más recientes
+    results.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
+
+    // Calcula los datos de paginación a partir del total filtrado
+    const total = results.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const start = (page - 1) * pageSize; // Índice de inicio de los resultados
+    const data = results.slice(start, start + pageSize);
+
+    return { data, total, page, pageSize, totalPages };
+  },
 };
