@@ -37,7 +37,7 @@ export const usersService = {
   },
 
   // Crea un usuario nuevo validando rol, email y asignación de recepcionista
-  async create({ name, email, password, role, assignedReceptionistId }, currentUser) {
+  async create({ name, email, password, role, assignedReceptionistId, specialtyId }, currentUser) {
     if (!VALID_ROLES.includes(role)) throw new AppError('Rol inválido', 400);
 
     // Las recepcionistas solo pueden crear pacientes
@@ -55,13 +55,14 @@ export const usersService = {
 
     const password_hash = await hashPassword(password);
     const data = { name, email, password_hash, role };
-    if (role === 'doctor' && assignedReceptionistId) data.assignedReceptionistId = assignedReceptionistId;
+    if (role === 'doctor' && assignedReceptionistId) data.assignedReceptionistId = assignedReceptionistId; // Se asigna la recepcionista solo si el rol es doctor
+    if (role === 'doctor' && specialtyId) data.specialtyId = specialtyId; // Se asigna la especialidad solo si el rol es doctor
 
     return usersRepository.create(data);
   },
 
   // Actualiza los datos de un usuario y mantiene consistencia en las relaciones
-  async update(id, { name, email, role, isActive, assignedReceptionistId }) {
+  async update(id, { name, email, role, isActive, assignedReceptionistId, specialtyId }) {
     // Verifica que el usuario exista antes de aplicar cualquier cambio
     const user = await usersRepository.findById(id);
     if (!user) throw new AppError('Usuario no encontrado', 404);
@@ -92,6 +93,13 @@ export const usersService = {
       // Si se asigna una recepcionista, se valida que exista, sea recepcionista y esté activa
       if (assignedReceptionistId !== null) await assertValidReceptionist(assignedReceptionistId);
       updates.assignedReceptionistId = assignedReceptionistId;
+    }
+
+    // Solo un doctor puede tener especialidad asignada
+    if (specialtyId !== undefined) {
+      const targetRole = role ?? user.role;
+      if (targetRole !== 'doctor') throw new AppError('Solo los doctores pueden tener especialidad asignada', 400);
+      updates.specialtyId = specialtyId;
     }
 
     // Persiste la actualización final después de validar todas las reglas
