@@ -22,14 +22,14 @@ export default function LoginPage() {
         router.push('/admin');
         break;
       case 'receptionist':
-        router.push('/dashboard/receptionist');
+        router.push('/receptionist');
         break;
       case 'doctor':
-        router.push('/appointments');
+        router.push('/doctor');
         break;
       case 'patient':
       default:
-        router.push('/dashboard/paciente');
+        router.push('/patient');
         break;
     }
   }, [user, router]);

@@ -141,7 +141,7 @@ export default function LandingPage() {
               variant="link"
               className="hover:text-emerald-700 transition-colors"
             >
-              <Link href="/register">Crear una cuenta</Link>
+              <Link href="/registro">Crear una cuenta</Link>
             </Button>
           </div>
 
