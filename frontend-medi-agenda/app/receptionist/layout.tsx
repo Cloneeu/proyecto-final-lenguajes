@@ -100,9 +100,9 @@ export default function ReceptionistLayout({ children }: { children: React.React
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="bg-[#0a0a0a] text-white">
-        <header className="flex h-14 items-center gap-2 border-b border-gray-800 px-4">
-          <SidebarTrigger className="text-white" />
+      <SidebarInset className="bg-background text-foreground">
+        <header className="flex h-14 items-center gap-2 border-b border-border px-4">
+          <SidebarTrigger className="text-foreground" />
         </header>
         <main className="flex-1 p-6 overflow-y-auto">{children}</main>
       </SidebarInset>

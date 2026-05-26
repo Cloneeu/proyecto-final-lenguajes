@@ -64,7 +64,7 @@ export function DoctorsView() {
             <div className="max-w-7xl mx-auto space-y-6">
 
                 {/* Encabezado */}
-                <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div className="flex justify-between items-center bg-sidebar p-6 rounded-2xl border border-slate-200/80 shadow-sm">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Personal Médico</h1>
                         <p className="text-sm text-slate-500">Administra los profesionales y sus especialidades activas.</p>
@@ -79,9 +79,9 @@ export function DoctorsView() {
                 </div>
 
                 {/* Contenedor de la Tabla */}
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <div className="bg-sidebar border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                     {loading ? (
-                        <div className="p-12 flex flex-col items-center justify-center text-slate-500 gap-3 bg-white">
+                        <div className="p-12 flex flex-col items-center justify-center text-slate-500 gap-3 bg-sidebar">
                             <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
                             <p className="text-sm font-medium">Sincronizando con Firestore...</p>
                         </div>
@@ -97,7 +97,7 @@ export function DoctorsView() {
                                         <th className="p-4 text-center pr-6">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
+                                <tbody className="divide-y divide-slate-100 text-sm text-slate-700 bg-sidebar">
                                     {doctors.map((doctor) => (
                                         <tr key={doctor.id} className="hover:bg-slate-50/60 transition-colors">
                                             <td className="p-4 pl-6 font-semibold text-slate-900">{doctor.name}</td>
@@ -158,7 +158,7 @@ export function DoctorsView() {
                                     ))}
                                     {doctors.length === 0 && (
                                         <tr>
-                                            <td colSpan={5} className="p-12 text-center text-slate-400 font-medium bg-white">
+                                            <td colSpan={5} className="p-12 text-center text-slate-400 font-medium bg-sidebar">
                                                 No se encontraron médicos en la base de datos.
                                             </td>
                                         </tr>

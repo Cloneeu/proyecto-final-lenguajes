@@ -90,8 +90,8 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="bg-[#0a0a0a] text-white">
-        <header className="flex h-14 items-center gap-2 border-b border-emerald-500/20 px-4">
+      <SidebarInset className="bg-background text-foreground">
+        <header className="flex h-14 items-center gap-2 border-b border-border px-4">
           <SidebarTrigger className="text-white" />
         </header>
         <main className="flex-1 p-6 overflow-y-auto">{children}</main>

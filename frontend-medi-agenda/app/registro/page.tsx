@@ -87,7 +87,7 @@ export default function RegistroPacientePage() {
 
             <div className="space-y-2">
               <Label>Médico</Label>
-              <select name="doctorId" required onChange={handleChange} className="w-full border p-2 rounded bg-white text-black">
+              <select name="doctorId" required onChange={handleChange} className="w-full border p-2 rounded bg-sidebar text-black">
                 <option value="">Selecciona un médico</option>
                 {doctores.map((doc) => (
                   <option key={doc.id} value={doc.id}>{doc.name}</option>

@@ -68,7 +68,7 @@ export default function AgendaCitas() {
         </p>
       </div>
 
-      <Card className="bg-[#111] border-gray-800">
+      <Card className="bg-card border-gray-800">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -89,10 +89,10 @@ export default function AgendaCitas() {
                 </TableRow>
               ) : (
                 confirmedAppointments.map((appt) => (
-                  <TableRow key={appt.id} className="border-gray-800 hover:bg-[#1a1a1a]">
+                  <TableRow key={appt.id} className="border-gray-800 hover:bg-background">
                     <TableCell className="font-medium text-emerald-500">{appt.date}</TableCell>
                     <TableCell className="text-gray-300">{appt.startTime}</TableCell>
-                    <TableCell className="text-white">
+                    <TableCell className="text-foreground">
                       {patients.find(p => p.id === appt.patientId)?.name || 'Desconocido'}
                     </TableCell>
                     <TableCell className="text-gray-400">

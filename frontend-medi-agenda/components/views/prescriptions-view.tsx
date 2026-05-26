@@ -153,8 +153,30 @@ export function PrescriptionsView() {
     })
   }
 
+  /*
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setFormError(null)
+    setSubmitting(true)
+    try {
+      await prescriptionsService.create(form)
+      setOpen(false)
+      resetForm()
+      await load()
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Error al crear receta")
+    } finally {
+      setSubmitting(false)
+    }
+  }*/
+
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    
+    // CANDADO: Si ya está en proceso de envío, ignorar cualquier otro clic
+    if (submitting) return; 
+
     setFormError(null)
     setSubmitting(true)
     try {

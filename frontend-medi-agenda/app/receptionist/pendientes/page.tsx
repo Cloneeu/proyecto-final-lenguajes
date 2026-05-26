@@ -75,7 +75,7 @@ export default function SolicitudesPendientes() {
         </p>
       </div>
 
-      <Card className="bg-[#111] border-gray-800">
+      <Card className="bg-card border-gray-800">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -96,7 +96,7 @@ export default function SolicitudesPendientes() {
                 </TableRow>
               ) : (
                 pendingAppointments.map((appt) => (
-                  <TableRow key={appt.id} className="border-gray-800 hover:bg-[#1a1a1a]">
+                  <TableRow key={appt.id} className="border-gray-800 hover:bg-background">
                     <TableCell className="font-medium text-white">
                       {patients.find(p => p.id === appt.patientId)?.name || 'Desconocido'}
                     </TableCell>
