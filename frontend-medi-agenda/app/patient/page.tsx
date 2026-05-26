@@ -120,7 +120,7 @@ export default function CitasPaciente() {
     <div className="max-w-5xl mx-auto space-y-10">
       <div className="flex justify-between items-end border-b border-emerald-500/30 pb-6">
         <div>
-          <h1 className="text-4xl font-bold">
+          <h1 className="text-4xl font-bold text-foreground">
             Hola, <span className="text-emerald-500">{user?.name}</span>
           </h1>
           <p className="text-gray-400 mt-2">Controla y agenda tus citas médicas.</p>
@@ -133,7 +133,7 @@ export default function CitasPaciente() {
               <PlusCircle size={20} /> Solicitar Cita
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md bg-[#111] text-white border-emerald-500/30">
+          <DialogContent className="sm:max-w-md bg-card text-card-foreground border-border">
             <DialogHeader>
               <DialogTitle className="text-emerald-500 text-xl">Nueva Solicitud de Cita</DialogTitle>
             </DialogHeader>
@@ -148,7 +148,7 @@ export default function CitasPaciente() {
                   <SelectTrigger className="bg-transparent border-gray-700 text-white">
                     <SelectValue placeholder="Selecciona un doctor..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1a1a1a] border-gray-700 text-white">
+                  <SelectContent className="bg-background border-gray-700 text-white">
                     {doctors.map(doc => (
                       <SelectItem key={doc.id} value={doc.id} className="hover:bg-emerald-500/20 focus:bg-emerald-500/20">
                         {doc.name}
@@ -221,10 +221,10 @@ export default function CitasPaciente() {
         ) : (
           <div className="grid gap-5">
             {pendingAppointments.map((cita) => (
-              <Card key={cita.id} className="bg-[#111] border-yellow-500/20">
+              <Card key={cita.id} className="bg-card border-yellow-500/20">
                 <CardContent className="flex items-center justify-between p-6">
                   <div className="space-y-1">
-                    <h3 className="text-2xl font-bold text-white">
+                    <h3 className="text-2xl font-bold text-foreground">
                       {doctors.find(d => d.id === cita.doctorId)?.name || 'Doctor no asignado'}
                     </h3>
                     <p className="text-emerald-500 font-medium">
@@ -252,10 +252,10 @@ export default function CitasPaciente() {
         ) : (
           <div className="grid gap-5">
             {confirmedAppointments.map((cita) => (
-              <Card key={cita.id} className="bg-[#111] border-emerald-500/30">
+              <Card key={cita.id} className="bg-card border-emerald-500/30">
                 <CardContent className="flex items-center justify-between p-6">
                   <div className="space-y-1">
-                    <h3 className="text-2xl font-bold text-white">
+                    <h3 className="text-2xl font-bold text-card-foreground">
                       {doctors.find(d => d.id === cita.doctorId)?.name || 'Doctor no asignado'}
                     </h3>
                     <p className="text-emerald-500 font-medium">

@@ -38,7 +38,9 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   }, [user, router])
 
   if (user === undefined) {
-    return <div className="flex h-screen items-center justify-center text-emerald-500">Cargando...</div>
+    //return <div className="flex h-screen items-center justify-center text-emerald-500">Cargando...</div>
+    return <div className=" bg-card text-card-foreground border border-border rounded-xl">Cargando...</div>
+
   }
   if (user === null || user.role !== "patient") return null
 
@@ -90,9 +92,9 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="bg-[#0a0a0a] text-white">
-        <header className="flex h-14 items-center gap-2 border-b border-emerald-500/20 px-4">
-          <SidebarTrigger className="text-white" />
+      <SidebarInset className="bg-background text-foreground">
+        <header className="flex h-14 items-center gap-2 border-b border-border px-4">
+          <SidebarTrigger className="text-foreground" />
         </header>
         <main className="flex-1 p-6 overflow-y-auto">{children}</main>
       </SidebarInset>

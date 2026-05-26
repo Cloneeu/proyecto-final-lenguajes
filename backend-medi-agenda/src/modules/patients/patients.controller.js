@@ -58,3 +58,17 @@ export const getAllPatients = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const addPatientRecord = async (req, res, next) => {
+  try {
+    const patientId = req.params.id;
+    const recordData = req.body; 
+
+    const newRecord = await patientsService.addPatientRecord(patientId, recordData);
+    
+    return sendSuccess(res, newRecord, 201, 'Registro añadido al expediente');
+  } catch (error) {
+    next(error);
+  }
+};

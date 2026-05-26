@@ -59,33 +59,33 @@ export default function ReceptionistDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-[#111] border-yellow-500/30">
+        <Card className="bg-card border-yellow-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-yellow-500">Solicitudes Pendientes</CardTitle>
             <ClockIcon className="size-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{pendingAppointments.length}</div>
+            <div className="text-3xl font-bold text-foreground">{pendingAppointments.length}</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#111] border-blue-500/30">
+        <Card className="bg-card border-blue-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-blue-500">Citas para Hoy</CardTitle>
             <CalendarIcon className="size-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{todayAppointments.length}</div>
+            <div className="text-3xl font-bold text-foreground">{todayAppointments.length}</div>
           </CardContent>
         </Card>
 
-        <Card className="bg-[#111] border-emerald-500/30">
+        <Card className="bg-card border-emerald-500/30">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-emerald-500">Total Pacientes Registrados</CardTitle>
             <UserIcon className="size-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-white">{patients.length}</div>
+            <div className="text-3xl font-bold text-foreground">{patients.length}</div>
           </CardContent>
         </Card>
       </div>

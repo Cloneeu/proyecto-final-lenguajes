@@ -45,7 +45,7 @@ const MOCK_DOCTORS = [
   { id: "doc1", name: "Dr. Alex" },
   { id: "doc2", name: "Dra. Jacqui" },
   { id: "doc3", name: "Dr. Eladio" },
-  { id: "doc3", name: "Dr. JP" },
+  { id: "doc4", name: "Dr. JP" },
 ]
 
 // Defini los colores para cada estado de la cita (por si luego se quiere cambiar mas facil), usados en la tabla principal
@@ -88,7 +88,7 @@ export function AppointmentsView() {
   // Filtros para mostrar solo ciertas citas según estado, fecha o médico
   const [filterStatus, setFilterStatus] = React.useState<string>("all")
   const [filterDate, setFilterDate] = React.useState<Date | undefined>()
-  const [filterDoctor, setFilterDoctor] = React.useState<string>("")
+  const [filterDoctor, setFilterDoctor] = React.useState<string>("all")
 
   // Estados para el formulario de creación de citas
   const [open, setOpen] = React.useState(false)
@@ -119,7 +119,7 @@ export function AppointmentsView() {
     return appointments.filter(a => {
       if (filterStatus !== "all" && a.status !== filterStatus) return false
       if (filterDate && a.date !== format(filterDate, "yyyy-MM-dd")) return false
-      if (filterDoctor && a.doctorId !== filterDoctor) return false
+      if (filterDoctor !== "all"&& a.doctorId !== filterDoctor) return false
       return true
     })
   }, [appointments, filterStatus, filterDate, filterDoctor])
@@ -157,7 +157,7 @@ export function AppointmentsView() {
       alert(e instanceof Error ? e.message : "Error eliminando")
     }
   }
-
+/*
   // Manejo de cambios de estado de las citas
   async function handleStatusChange(id: string, status: Status) {
     try {
@@ -166,7 +166,21 @@ export function AppointmentsView() {
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error actualizando estado")
     }
+  }*/
+
+  // Manejo de cambios de estado de las citas
+  async function handleStatusChange(id: string, status: Status) {
+    try {
+      // Mandamos la actualización al backend
+      await appointmentsService.updateStatus(id, status)
+      
+      // Actualizamos solo el estado en el frontend, conservando el resto de los datos (...a)
+      setAppointments(prev => prev.map(a => (a.id === id ? { ...a, status } : a)))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Error actualizando estado")
+    }
   }
+
 
   // Estados de carga y autenticación
   if (user === undefined) {
@@ -317,7 +331,7 @@ export function AppointmentsView() {
               <SelectValue placeholder="Médico" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos los médicos</SelectItem>
+              <SelectItem value="all">Todos los médicos</SelectItem>
               {MOCK_DOCTORS.map(d => (
                 <SelectItem key={`filter-${d.id}`} value={d.id}>{d.name}</SelectItem>
               ))}

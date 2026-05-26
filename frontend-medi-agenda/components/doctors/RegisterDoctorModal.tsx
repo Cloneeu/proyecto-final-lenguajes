@@ -74,7 +74,7 @@ export default function RegisterDoctorModal({ isOpen, onClose, onSuccess }: Regi
 
     return (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity">
-        <div className="bg-white rounded-2xl max-w-md w-full shadow-xl border border-slate-100 overflow-hidden flex flex-col">
+        <div className="bg-sidebar rounded-2xl max-w-md w-full shadow-xl border border-slate-100 overflow-hidden flex flex-col">
             {/* Header del Modal */}
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <div>
@@ -87,7 +87,7 @@ export default function RegisterDoctorModal({ isOpen, onClose, onSuccess }: Regi
             </div>
 
             {/* Cuerpo / Formulario */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 flex-1 bg-white">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 flex-1 bg-sidebar">
             {errorMsg && (
                 <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium rounded-xl">
                 {errorMsg}
@@ -104,7 +104,7 @@ export default function RegisterDoctorModal({ isOpen, onClose, onSuccess }: Regi
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ej. Dr. Pablo Martínez"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-950 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-950 bg-sidebar focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                 />
             </div>
 
@@ -114,7 +114,7 @@ export default function RegisterDoctorModal({ isOpen, onClose, onSuccess }: Regi
                 required
                 value={specialtyId}
                 onChange={(e) => setSpecialtyId(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-950 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-950 bg-sidebar focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                 >
                 <option value="" className="text-slate-500">Selecciona una opción...</option>
                 {specialties.map((spec) => (
@@ -136,7 +136,7 @@ export default function RegisterDoctorModal({ isOpen, onClose, onSuccess }: Regi
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="ejemplo@clinica.com"
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-950 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-none"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-950 bg-sidebar focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all shadow-none"
                 />
             </div>
 
@@ -149,12 +149,12 @@ export default function RegisterDoctorModal({ isOpen, onClose, onSuccess }: Regi
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="4641234567"
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-950 bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-950 bg-sidebar focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-900 transition-all"
                 />
             </div>
 
             {/* Acciones */}
-            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6 bg-white">
+            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-6 bg-sidebar">
                 <button
                 type="button"
                 onClick={onClose}
