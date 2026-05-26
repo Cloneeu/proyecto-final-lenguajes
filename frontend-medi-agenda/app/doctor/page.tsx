@@ -35,6 +35,7 @@ export default function DoctorDashboard() {
   const [appointments, setAppointments] = React.useState<any[]>([])
   const [patients, setPatients] = React.useState<{id: string, name: string}[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [doctorName, setDoctorName] = React.useState<string>("")
 
   const loadDashboardData = React.useCallback(async () => {
     if (!user) return
@@ -47,6 +48,10 @@ export default function DoctorDashboard() {
 
       if (Array.isArray(usersData)) {
         setPatients(usersData.filter((u: any) => u.role === 'patient'))
+        const me = usersData.find((u: any) => u.id === user.id)
+        if (me && me.name) {
+          setDoctorName(me.name)
+        }
       }
 
       if (Array.isArray(appointmentsData)) {
@@ -89,7 +94,7 @@ export default function DoctorDashboard() {
       {/* Encabezado */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Bienvenido, Dr. {user?.name?.split(' ')[0] || 'Médico'}
+          Bienvenido, Dr. {doctorName ? doctorName.split(' ')[0] : 'Médico'}
         </h1>
         <p className="text-muted-foreground mt-1">Aquí está el resumen de tu día y tus próximas consultas.</p>
       </div>
@@ -130,17 +135,17 @@ export default function DoctorDashboard() {
         </Card>
       </div>
 
-      {/* Botones de Acción Rápida (Consistentes con tu tema) */}
+    {/* Botones de Acción Rápida */}
       <div className="flex flex-wrap gap-3 py-2">
         <Button 
-          onClick={() => router.push('/prescriptions')}
+          onClick={() => router.push('/doctor/prescriptions')} 
           className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
         >
           <FileText className="mr-2 size-4" />
           Crear Receta
         </Button>
         <Button 
-          onClick={() => router.push('/patients')}
+          onClick={() => router.push('/doctor/patients')}
           variant="secondary"
           className="bg-secondary hover:bg-secondary/80 text-secondary-foreground shadow-sm"
         >
@@ -149,7 +154,7 @@ export default function DoctorDashboard() {
         </Button>
       </div>
 
-      {/* Tabla: Mis citas del día */}
+      {/* Tabla de citas del día */}
       <Card className="bg-card border-border/50 shadow-sm overflow-hidden">
         <CardHeader className="bg-muted/20 border-b border-border/50 pb-4">
           <CardTitle className="text-lg">Mis citas del día</CardTitle>
@@ -170,7 +175,7 @@ export default function DoctorDashboard() {
               {appointments.length === 0 ? (
                 <TableRow className="border-border/50 hover:bg-transparent">
                   <TableCell colSpan={5} className="text-center text-muted-foreground h-32">
-                    No tienes citas agendadas para hoy. ¡Tómate un café! ☕
+                    No hay citas agendadas para hoy 
                   </TableCell>
                 </TableRow>
               ) : (
@@ -196,7 +201,7 @@ export default function DoctorDashboard() {
                           }
                         >
                           {app.status === 'pending' ? 'Pendiente' : 
-                           app.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}
+                          app.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right pr-4 space-x-2">

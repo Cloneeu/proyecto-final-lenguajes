@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { CalendarIcon, UsersIcon, FilePlusIcon, LogOutIcon } from "lucide-react"
+import { CalendarIcon, UsersIcon, FilePlusIcon, LogOutIcon, HomeIcon } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 import {
   SidebarProvider,
@@ -22,6 +22,7 @@ import {
 
 // Aqui muevanle para que se ponga en la sidebar la pestaña
 const NAV_ITEMS = [
+  { href: "/doctor", label: "Inicio", icon: HomeIcon },
   { href: "/doctor/appointments", label: "Citas", icon: CalendarIcon },
   { href: "/doctor/patients", label: "Pacientes", icon: UsersIcon },
   { href: "/doctor/prescriptions", label: "Recetas", icon: FilePlusIcon },
@@ -65,6 +66,7 @@ export default function DoctorLayout({ children }: { children: React.ReactNode }
               <SidebarMenu>
                 {NAV_ITEMS.map(item => (
                   <SidebarMenuItem key={item.href}>
+                    {/* Evaluamos si es la ruta exacta para que se marque como activa correctamente */}
                     <SidebarMenuButton asChild isActive={pathname === item.href}>
                       <Link href={item.href}>
                         <item.icon />
