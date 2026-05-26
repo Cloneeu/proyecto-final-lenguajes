@@ -35,3 +35,18 @@ export const getPatientHistory = async (patientId) => {
   const history = await patientsRepository.getPatientHistory(patientId);
   return history;
 };
+/*
+export const addPatientRecord = async (patientId, recordData) => {
+  // Primero validamos que el paciente realmente exista
+  await getPatientById(patientId); 
+
+  return await patientsRepository.addPatientRecord(patientId, recordData);
+};*/
+
+export const addPatientRecord = async (patientId, recordData) => {
+  await getPatientById(patientId); 
+  
+  // Llamamos al repositorio
+  const newRecord = await patientsRepository.addPatientRecord(patientId, recordData);
+  return newRecord;
+};

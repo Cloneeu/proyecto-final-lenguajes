@@ -12,3 +12,7 @@ router.get('/:id', patientsController.getPatientById);
 router.get('/:id/history', patientsController.getPatientHistory);
 
 export default router;
+
+// Ruta para agregar un nuevo registro al expediente
+
+router.post('/:id/records', patientsController.addPatientRecord);
