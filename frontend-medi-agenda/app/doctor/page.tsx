@@ -55,8 +55,10 @@ export default function DoctorDashboard() {
       }
 
       if (Array.isArray(appointmentsData)) {
+
+        const todayString = format(new Date(), "yyyy-MM-dd")
         // Filtrar citas del doctor logueado
-        const myAppointments = appointmentsData.filter((app: any) => app.doctorId === user.id)
+        const myAppointments = appointmentsData.filter((app: any) => app.doctorId === user.id && app.date === todayString)
         myAppointments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
         setAppointments(myAppointments)
       }
