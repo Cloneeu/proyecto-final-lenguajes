@@ -11,7 +11,6 @@ function authHeaders(): HeadersInit {
 async function handleResponse<T>(res: Response): Promise<T> {
   const json = await res.json();
   if (!json.success) throw new Error(json.message ?? 'Falló la solicitud');
-  // Retornamos toda la data porque la paginación de Firestore devuelve { data, total, page, etc. }
   return json.data as T; 
 }
 
@@ -41,6 +40,6 @@ export const auditsService = {
   getPaginated(page = 1, pageSize = 15): Promise<PaginatedAudits> {
     return fetch(`${API_BASE}/audits?page=${page}&pageSize=${pageSize}`, { 
       headers: authHeaders() 
-    }).then(res => handleResponse<PaginatedAudits>(res)); // <-- Aquí está la solución
+    }).then(res => handleResponse<PaginatedAudits>(res));
   },
 };

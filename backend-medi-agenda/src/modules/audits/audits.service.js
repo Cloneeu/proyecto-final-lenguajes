@@ -1,21 +1,46 @@
 import { auditsRepository } from './audits.repository.js';
+import { db } from '../../config/firebase.js'; // Importamos db para buscar el nombre si falta
 
 export const auditsService = {
-  // Función principal para registrar eventos en cualquier parte del sistema
   async logAction({ currentUser, action, resource, resourceId, details }) {
+    let nameToSave = 'Sistema';
+    
+    // Si hay un usuario haciendo la acción, intentamos obtener su nombre
+    if (currentUser) {
+      nameToSave = currentUser.name;
+      
+      // Si el nombre es undefined (porque el currentUser viene del Token JWT)
+      if (!nameToSave && currentUser.id) {
+        try {
+          // Buscamos rápidamente su nombre real en la colección de usuarios
+          const userDoc = await db.collection('users').doc(currentUser.id).get();
+          if (userDoc.exists) {
+            nameToSave = userDoc.data().name;
+          } else {
+            nameToSave = 'Usuario';
+          }
+        } catch (error) {
+          nameToSave = 'Usuario Desconocido';
+        }
+      }
+    }
+
+    // Construimos el objeto asegurándonos de no dejar undefined
     const performedBy = currentUser ? {
-      id: currentUser.id,
-      name: currentUser.name,
-      role: currentUser.role
+      id: currentUser.id || 'unknown',
+      name: nameToSave || 'Desconocido',
+      role: currentUser.role || 'unknown'
     } : { id: 'system', name: 'Sistema', role: 'system' };
 
-    return auditsRepository.create({
+    // Limpiamos los demás campos por seguridad
+    const logData = {
       performedBy,
-      action,           
-      resource,         
-      resourceId,       
-      details           
-    });
+      action: action || 'UNKNOWN',
+      resource: resource || 'UNKNOWN',
+      resourceId: resourceId || 'N/A',
+      details: details || 'Sin detalles'
+    };
+    return auditsRepository.create(logData);
   },
 
   async listPaginated(filters) {

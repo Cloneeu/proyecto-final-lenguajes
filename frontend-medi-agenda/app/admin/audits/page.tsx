@@ -12,7 +12,7 @@ export default function AuditsPage() {
 
   React.useEffect(() => {
     auditsService.getPaginated(1, 50)
-      .then(res => setLogs(res.data)) // Ajusta 'res.data' dependiendo de si tu api retorna { data: { data: [...] } }
+      .then(res => setLogs(res.data)) 
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
@@ -51,7 +51,7 @@ export default function AuditsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={log.action === 'CREATE' ? 'default' : log.action === 'DELETE' ? 'destructive' : 'secondary'}>
+                    <Badge variant="secondary">
                       {log.action}
                     </Badge>
                   </TableCell>
