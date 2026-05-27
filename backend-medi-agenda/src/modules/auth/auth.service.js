@@ -1,6 +1,7 @@
 import { authRepository } from './auth.repository.js';
 import { hashPassword, comparePassword, generateToken } from '../../utils/authUtils.js';
 import { AppError } from '../../utils/AppError.js';
+import { auditsService } from '../audits/audits.service.js';
 
 export const authService = {
     async register(data) {
@@ -47,6 +48,16 @@ export const authService = {
     }
 
     const token = generateToken({ id: newUser.id, role: newUser.role });
+
+    // Registro de auditoría
+    await auditsService.logAction({
+      currentUser: { id: newUser.id, name: newUser.name, role: newUser.role },
+      action: 'CREATE',
+      resource: 'AUTH',
+      resourceId: newUser.id,
+      details: `Nuevo usuario registrado: ${newUser.email} con rol ${newUser.role}`
+    }).catch(err => console.error("Error auditoría:", err));
+
     return { token, user: { id: newUser.id, name: newUser.name, role: newUser.role } };
   },
 
@@ -57,9 +68,17 @@ export const authService = {
     const isMatch = await comparePassword(password, user.password_hash);
     if (!isMatch) throw new AppError('Credenciales inválidas', 401);
 
-    // TODO: Lo del login
-
     const token = generateToken({ id: user.id, role: user.role });
+
+    // Registro de auditoría
+    await auditsService.logAction({
+      currentUser: user,
+      action: 'LOGIN',
+      resource: 'AUTH',
+      resourceId: user.id,
+      details: `Inicio de sesión exitoso como ${user.role}`
+    }).catch(err => console.error("Error auditoría:", err));
+
     return { token, user: { id: user.id, name: user.name, role: user.role } };
   }
 };

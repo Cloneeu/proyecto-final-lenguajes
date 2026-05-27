@@ -10,6 +10,7 @@ import doctorRoutes from './modules/doctors/doctors.routes.js';
 import specialtyRoutes from './modules/specialties/specialties.routes.js';
 import usersRouter from './modules/users/users.routes.js';
 import adminRouter from './modules/admin/admin.routes.js';
+import auditsRouter from './modules/audits/audits.routes.js';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/specialties', specialtyRoutes);
 app.use('/api/doctors', doctorRoutes);      
 app.use('/api/users', usersRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/audits', auditsRouter);
 
 app.use(errorHandler);
 
