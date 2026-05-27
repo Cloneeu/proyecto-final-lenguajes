@@ -3,10 +3,14 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { patientsService, Patient, CreatePatientDto } from "@/services/patientsService"
+//import { patientsService, Patient, CreatePatientDto } from "@/services/patientsService"
+import { patientsService, Patient } from "@/services/patientsService"
+import { appointmentsService } from "@/services/appointmentsService"
+import { useCurrentUser } from "@/lib/auth" 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { usersService } from "@/services/usersService"
 import {
   Table,
   TableBody,
@@ -31,17 +35,43 @@ interface PatientsViewProps {
 }
 
 export function PatientsView({ basePath = "/patients" }: PatientsViewProps) {
+  const user = useCurrentUser()
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [formData, setFormData] = useState({ name: "", email: "", age: "" })
+  //const [isDialogOpen, setIsDialogOpen] = useState(false)
+  //const [formData, setFormData] = useState({ name: "", email: "", age: "" })
 
   useEffect(() => {
     const fetchPatients = async () => {
+      if (!user) {
+        setLoading(false)
+        return 
+      }
       try {
-        const data = await patientsService.getAll() as Patient[];
-        setPatients(data);
+        setLoading(true)
+        
+        const [usersData, appointmentsData] = await Promise.all([
+          usersService.getAll(),
+          appointmentsService.getAll()
+        ])
+
+        if (Array.isArray(appointmentsData) && Array.isArray(usersData)) {
+          // 1. Extraer los id únicos de los pacientes que tienen cita con ese doctor
+          const myPatientIds = new Set(
+            appointmentsData
+              .filter((app: any) => app.doctorId === user.id)
+              .map((app: any) => app.patientId)
+          )
+
+          // filtramos la colección de usuarios que sean 'patient' y que estén en la lista de sus id
+          const myPatients = usersData.filter((u: any) =>
+            u.role === 'patient' && myPatientIds.has(u.id)
+          )
+
+          setPatients(myPatients)
+        }
+
       } catch (error) {
         console.error("Error al cargar pacientes:", error);
       } finally {
@@ -49,14 +79,14 @@ export function PatientsView({ basePath = "/patients" }: PatientsViewProps) {
       }
     };
     fetchPatients();
-  }, []);
+  }, [user]);
 
   const filteredPatients = patients.filter((patient) =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  /*const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const newPatientData: CreatePatientDto = {
@@ -71,7 +101,7 @@ export function PatientsView({ basePath = "/patients" }: PatientsViewProps) {
     } catch (error) {
       console.error("Error al crear paciente:", error);
     }
-  };
+  };*/
 
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6 max-w-6xl">
@@ -82,7 +112,7 @@ export function PatientsView({ basePath = "/patients" }: PatientsViewProps) {
             Gestiona el directorio de pacientes y sus expedientes médicos.
           </p>
         </div>
-
+        {/*
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-emerald-600 hover:bg-emerald-700">
@@ -136,7 +166,7 @@ export function PatientsView({ basePath = "/patients" }: PatientsViewProps) {
               </DialogFooter>
             </form>
           </DialogContent>
-        </Dialog>
+        </Dialog>*/}
       </div>
 
       <div className="mb-6 flex items-center">
