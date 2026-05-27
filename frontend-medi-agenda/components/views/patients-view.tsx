@@ -86,22 +86,6 @@ export function PatientsView({ basePath = "/patients" }: PatientsViewProps) {
     patient.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  /*const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const newPatientData: CreatePatientDto = {
-        name: formData.name,
-        email: formData.email,
-        age: Number(formData.age)
-      };
-      const createdPatient = await patientsService.create(newPatientData) as Patient;
-      setPatients([...patients, createdPatient]);
-      setIsDialogOpen(false);
-      setFormData({ name: "", email: "", age: "" });
-    } catch (error) {
-      console.error("Error al crear paciente:", error);
-    }
-  };*/
 
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6 max-w-6xl">
@@ -112,61 +96,7 @@ export function PatientsView({ basePath = "/patients" }: PatientsViewProps) {
             Gestiona el directorio de pacientes y sus expedientes médicos.
           </p>
         </div>
-        {/*
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              + Nuevo Paciente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>Registrar Paciente</DialogTitle>
-                <DialogDescription>
-                  Ingresa los datos del nuevo paciente para añadirlo al sistema.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">Nombre</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="email" className="text-right">Correo</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="age" className="text-right">Edad</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => setFormData({...formData, age: e.target.value})}
-                    className="col-span-3"
-                    required
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">Guardar</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>*/}
+       
       </div>
 
       <div className="mb-6 flex items-center">
