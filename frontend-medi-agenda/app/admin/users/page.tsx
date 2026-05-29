@@ -362,7 +362,7 @@ export default function UsersPage() {
 
                 {/* AÑADIMOS LOS CAMPOS EXTRA SI EL ROL ELEGIDO ES DOCTOR */}
                 {createForm.role === "doctor" && (
-                  <div className="grid gap-4 p-4 bg-slate-50 border rounded-lg">
+                  <div className="grid gap-4 p-4 bg-muted/50 border rounded-lg">
                     <div className="space-y-1">
                       <Label className="text-slate-700">Especialidad Asignada *</Label>
                       <Select
@@ -370,7 +370,7 @@ export default function UsersPage() {
                         value={createForm.specialtyId}
                         onValueChange={v => setCreateForm(p => ({ ...p, specialtyId: v }))}
                       >
-                        <SelectTrigger className="bg-white">
+                        <SelectTrigger className="bg-muted/50 p-4 rounded-md border border-border mt-4">
                           <SelectValue placeholder="Selecciona la especialidad" />
                         </SelectTrigger>
                         <SelectContent>
@@ -389,7 +389,7 @@ export default function UsersPage() {
                           setCreateForm(p => ({ ...p, assignedReceptionistId: v === "__none__" ? "" : v }))
                         }
                       >
-                        <SelectTrigger className="bg-white">
+                        <SelectTrigger className="bg-w">
                           <SelectValue placeholder="Sin asignar" />
                         </SelectTrigger>
                         <SelectContent>
