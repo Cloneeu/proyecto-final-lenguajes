@@ -20,18 +20,22 @@ export const appointmentsRepository = {
     // Filtra las citas de un doctor específico
     const snap = await db.collection(COLLECTION)
       .where('doctorId', '==', doctorId)
-      .orderBy('createdAt', 'desc')
       .get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Convertir los docs de firestore a objetos de javascript y ordenar por fecha de creación para mostrar primero lo más reciente
+    return snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
   },
 
   async findByPatient(patientId) {
     // Filtra las citas de un paciente específico
     const snap = await db.collection(COLLECTION)
       .where('patientId', '==', patientId)
-      .orderBy('createdAt', 'desc')
       .get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Convertir los docs de firestore a objetos de javascript y ordenar por fecha de creación para mostrar primero lo más reciente
+    return snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
   },
 
   async findByDoctorAndDate(doctorId, date) {
@@ -39,9 +43,11 @@ export const appointmentsRepository = {
     const snap = await db.collection(COLLECTION)
       .where('doctorId', '==', doctorId)
       .where('date', '==', date)
-      .where('status', 'not-in', ['cancelled'])
       .get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Filtra las citas canceladas para que no interfieran con la detección de choques, y convierte los docs de firestore a objetos de javascript
+    return snap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(a => a.status !== 'cancelled');
   },
 
   async create(data) {
