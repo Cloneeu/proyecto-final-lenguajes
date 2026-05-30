@@ -7,6 +7,7 @@ import {
   LayoutDashboardIcon,
   UsersIcon,
   ShieldIcon,
+  StethoscopeIcon,
   LogOutIcon,
 } from "lucide-react"
 // Cambiamos la importación para usar tu contexto global en lugar de useCurrentUser
@@ -31,6 +32,7 @@ import {
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboardIcon },
   { href: "/admin/users", label: "Usuarios", icon: UsersIcon },
+  { href: "/admin/specialties", label: "Especialidades", icon: StethoscopeIcon },
   { href: "/admin/audits", label: "Auditorías", icon: ShieldIcon },
 ]
 

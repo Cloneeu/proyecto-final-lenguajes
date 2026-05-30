@@ -3,7 +3,7 @@ import { validateSpecialty } from './specialties.validator.js';
 
 export const getAllSpecialties = async (req, res) => {
     try {
-        //  pedimos los datos al servicio 
+        //  pedimos los datos al servicio
         const specialties = await specialtiesService.getAllSpecialties();
         res.status(200).json(specialties);
     } catch (error) {
@@ -13,7 +13,7 @@ export const getAllSpecialties = async (req, res) => {
 
 export const createSpecialty = async (req, res) => {
     try {
-        // pasamos los datos por el validador  
+        // pasamos los datos por el validador
         const { isValid, errors } = validateSpecialty(req.body);
         if (!isValid) {
             return res.status(400).json({ message: "Datos inválidos 🧐", errors });
@@ -21,10 +21,34 @@ export const createSpecialty = async (req, res) => {
 
         const { name } = req.body;
         //  Si es válido, el servicio se encarga de revisar que no esté duplicado y de guardarlo
-        const result = await specialtiesService.createSpecialty(name);
+        const result = await specialtiesService.createSpecialty(name, req.user);
         res.status(201).json(result);
     } catch (error) {
-        // Si el servicio encuentra que la especialidad ya existe, marca error 
-        res.status(400).json({ message: error.message });
+        // Si el servicio encuentra que la especialidad ya existe, marca error
+        res.status(error.status || 400).json({ message: error.message });
+    }
+};
+
+export const updateSpecialty = async (req, res) => {
+    try {
+        const { isValid, errors } = validateSpecialty(req.body);
+        if (!isValid) {
+            return res.status(400).json({ message: "Datos inválidos 🧐", errors });
+        }
+
+        const { name } = req.body;
+        const result = await specialtiesService.updateSpecialty(req.params.id, name, req.user);
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(error.status || 400).json({ message: error.message });
+    }
+};
+
+export const deleteSpecialty = async (req, res) => {
+    try {
+        await specialtiesService.deleteSpecialty(req.params.id, req.user);
+        res.status(200).json({ message: "Especialidad eliminada" });
+    } catch (error) {
+        res.status(error.status || 400).json({ message: error.message });
     }
 };

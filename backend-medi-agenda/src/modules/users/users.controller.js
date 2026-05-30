@@ -56,7 +56,7 @@ export const usersController = {
   // Actualiza los datos de un usuario existente
   async update(req, res, next) {
     try {
-      const data = await usersService.update(req.params.id, req.body);
+      const data = await usersService.update(req.params.id, req.body, req.user);
       sendSuccess(res, data, 200, 'Usuario actualizado');
     } catch (err) {
       next(err);
@@ -66,7 +66,7 @@ export const usersController = {
   // Cambia el estado activo/inactivo del usuario
   async toggleActive(req, res, next) {
     try {
-      const data = await usersService.setActive(req.params.id, req.body.isActive);
+      const data = await usersService.setActive(req.params.id, req.body.isActive, req.user);
       sendSuccess(res, data, 200, 'Estado actualizado');
     } catch (err) {
       next(err);
@@ -76,7 +76,7 @@ export const usersController = {
   // Asigna un recepcionista a un usuario
   async assignReceptionist(req, res, next) {
     try {
-      const data = await usersService.assignReceptionist(req.params.id, req.body.receptionistId);
+      const data = await usersService.assignReceptionist(req.params.id, req.body.receptionistId, req.user);
       sendSuccess(res, data, 200, 'Recepcionista asignada');
     } catch (err) {
       next(err);
@@ -86,7 +86,7 @@ export const usersController = {
   // Realiza una eliminación lógica del usuario
   async softDelete(req, res, next) {
     try {
-      await usersService.softDelete(req.params.id);
+      await usersService.softDelete(req.params.id, req.user);
       sendSuccess(res, null, 200, 'Usuario eliminado');
     } catch (err) {
       next(err);

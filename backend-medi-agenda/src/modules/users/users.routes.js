@@ -23,7 +23,6 @@ router.get('/:id', authorize('admin', 'receptionist', 'patient', 'doctor'), user
 
 // POST: solo admin puede crear usuarios, receptionist solo puede crear pacientes
 router.post('/', authorize('admin'), validate(validateCreateUser), usersController.create);
-router.put('/:id', validate(validateUpdateUser), usersController.update);
 
 // PUT/PATCH/DELETE: solo admin puede actualizar o eliminar usuarios
 router.put('/:id', authorize('admin'), validate(validateUpdateUser), usersController.update);

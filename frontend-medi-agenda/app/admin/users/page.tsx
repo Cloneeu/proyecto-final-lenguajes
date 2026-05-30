@@ -2,12 +2,24 @@
 
 import * as React from "react"
 import Link from "next/link" // AÑADIMOS IMPORTACIÓN DE LINK PARA EL BOTÓN DE ESPECIALIDADES
-import { PlusIcon, PencilIcon, TrashIcon } from "lucide-react"
+import { PlusIcon, PencilIcon, TrashIcon, XIcon, CheckCircle2Icon, AlertCircleIcon } from "lucide-react"
 import { usersService, type UserRecord } from "@/services/usersService"
+import { buildPageItems } from "@/lib/pagination"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
   Table,
   TableBody,
@@ -43,23 +55,6 @@ import {
 
 // Tamaño fijo de página para el listado!!!!!!
 const PAGE_SIZE = 10
-
-// Calcula la secuencia de páginas a mostrar en la paginación
-// Genera un array con los números de página a visualizar, incluyendo "ellipsis",
-// apenas aprendi como se llamaban los tres puntitos (...) :P 
-// cuando hay espacios grandes entre páginas. Muestra siempre la primera y última página,
-// y 1-2 páginas alrededor de la página actual para navegación rápida
-function buildPageItems(current: number, total: number): (number | "ellipsis")[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
-  const items: (number | "ellipsis")[] = [1]
-  if (current > 3) items.push("ellipsis")
-  const start = Math.max(2, current - 1)
-  const end = Math.min(total - 1, current + 1)
-  for (let i = start; i <= end; i++) items.push(i)
-  if (current < total - 2) items.push("ellipsis")
-  items.push(total)
-  return items
-}
 
 // Los roles que manejamos hasta el momento
 const ROLES = ["admin", "doctor", "patient", "receptionist"] as const
@@ -117,6 +112,26 @@ export default function UsersPage() {
   const [editForm, setEditForm] = React.useState(EMPTY_EDIT)
   const [editError, setEditError] = React.useState<string | null>(null)
   const [editing, setEditing] = React.useState(false)
+
+  // Usuario marcado para eliminación, abre el diálogo de confirmación
+  const [deleteTarget, setDeleteTarget] = React.useState<UserRecord | null>(null)
+  const [deleting, setDeleting] = React.useState(false)
+
+  // Notificaciones tipo toast (reemplazan a los alert() que les dije)
+  type Toast = { id: number; message: string; variant: "default" | "destructive" }
+  const [toasts, setToasts] = React.useState<Toast[]>([])
+  const pushToast = React.useCallback(
+    (message: string, variant: Toast["variant"] = "destructive") => {
+      const id = Date.now() + Math.random()
+      setToasts(prev => [...prev, { id, message, variant }])
+      setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000)
+    },
+    []
+  )
+  const dismissToast = React.useCallback(
+    (id: number) => setToasts(prev => prev.filter(t => t.id !== id)),
+    []
+  )
 
   // Recepcionistas activas obtenidas de la lista completa
   const receptionists = React.useMemo(
@@ -263,7 +278,7 @@ export default function UsersPage() {
       await usersService.toggleActive(user.id, !user.isActive)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Error al cambiar estado")
+      pushToast(e instanceof Error ? e.message : "Error al cambiar estado")
     }
   }
 
@@ -273,18 +288,24 @@ export default function UsersPage() {
       await usersService.assignReceptionist(doctorId, receptionistId)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Error al asignar recepcionista")
+      pushToast(e instanceof Error ? e.message : "Error al asignar recepcionista")
     }
   }
 
   // FUNCION PARA ELIMINAR UN USUARIO, SOLO ENVIAMOS SU ID, EL BACKEND SE ENCARGA DE DESACTIVARLO
-  async function handleDelete(user: UserRecord) {
-    if (!confirm(`¿Eliminar a ${user.name}? Esta acción desactivará su cuenta.`)) return
+  // La confirmación se maneja con un AlertDialog (deleteTarget); aquí solo ejecutamos el borrado
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await usersService.delete(user.id)
+      await usersService.delete(deleteTarget.id)
+      setDeleteTarget(null)
       await load()
+      pushToast("Usuario eliminado correctamente", "default")
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Error al eliminar usuario")
+      pushToast(e instanceof Error ? e.message : "Error al eliminar usuario")
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -660,7 +681,7 @@ export default function UsersPage() {
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => handleDelete(u)}
+                            onClick={() => setDeleteTarget(u)}
                           >
                             <TrashIcon className="size-3" />
                           </Button>
@@ -738,6 +759,58 @@ export default function UsersPage() {
           )}
         </>
       )}
+
+      {/* Diálogo de confirmación para eliminar */}
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={open => { if (!open) setDeleteTarget(null) }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción desactivará la cuenta de{" "}
+              <span className="font-medium text-foreground">{deleteTarget?.name}</span>.
+              Podrás reactivarla más tarde cambiando su estado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={e => { e.preventDefault(); confirmDelete() }}
+              disabled={deleting}
+              className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+            >
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Notificaciones toast */}
+      <div className="fixed bottom-4 right-4 z-100 flex w-full max-w-sm flex-col gap-2">
+        {toasts.map(t => (
+          <Alert
+            key={t.id}
+            variant={t.variant}
+            className="shadow-lg ring-1 ring-foreground/10"
+          >
+            {t.variant === "destructive" ? (
+              <AlertCircleIcon />
+            ) : (
+              <CheckCircle2Icon className="text-emerald-600" />
+            )}
+            <AlertDescription className="text-foreground">{t.message}</AlertDescription>
+            <button
+              onClick={() => dismissToast(t.id)}
+              className="absolute top-2.5 right-3 text-muted-foreground hover:text-foreground"
+              aria-label="Cerrar notificación"
+            >
+              <XIcon className="size-4" />
+            </button>
+          </Alert>
+        ))}
+      </div>
     </div>
   )
 }

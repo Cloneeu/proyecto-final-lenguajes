@@ -102,9 +102,12 @@ export const usersService = {
     if (isActive !== undefined) updates.isActive = isActive;
 
     if (assignedReceptionistId !== undefined) {
-      const targetRole = role ?? user.role;
-      if (targetRole !== 'doctor') throw new AppError('Solo los doctores pueden tener recepcionista asignada', 400);
-      if (assignedReceptionistId !== null) await assertValidReceptionist(assignedReceptionistId);
+      // Quitar la recepcionista (null) siempre es válido, solo asignar una cuando el rol sea doctor
+      if (assignedReceptionistId !== null) {
+        const targetRole = role ?? user.role;
+        if (targetRole !== 'doctor') throw new AppError('Solo los doctores pueden tener recepcionista asignada', 400);
+        await assertValidReceptionist(assignedReceptionistId);
+      }
       updates.assignedReceptionistId = assignedReceptionistId;
     }
 

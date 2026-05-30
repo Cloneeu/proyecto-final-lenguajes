@@ -2,6 +2,7 @@ import { appointmentsRepository } from './appointments.repository.js';
 import { AppError } from '../../utils/AppError.js';
 import { auditsService } from '../audits/audits.service.js';
 
+// Para checar si una cita se superpone con otra, en formato "HH:MM" y date es "YYYY-MM-DD".
 function timesOverlap(s1, e1, s2, e2) {
   return s1 < e2 && e1 > s2;
 }

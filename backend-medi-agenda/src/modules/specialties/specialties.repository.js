@@ -16,5 +16,13 @@ export const specialtiesRepository = {
         const newSpecialty = { name, createdAt: new Date().toISOString() };
         const docRef = await db.collection('specialties').add(newSpecialty);
         return { id: docRef.id, ...newSpecialty };
+    },
+    update: async (id, name) => {
+        const updates = { name, updatedAt: new Date().toISOString() };
+        await db.collection('specialties').doc(id).update(updates);
+        return { id, ...updates };
+    },
+    remove: async (id) => {
+        await db.collection('specialties').doc(id).delete();
     }
 };
