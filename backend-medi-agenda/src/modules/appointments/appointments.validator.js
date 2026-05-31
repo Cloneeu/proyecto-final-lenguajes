@@ -17,6 +17,14 @@ export function validateCreateAppointment(body, user) {
   if (!TIME_RE.test(endTime)) return { error: 'endTime debe estar en formato HH:MM' };
   // La cita no puede terminar antes de empezar.
   if (startTime >= endTime) return { error: 'startTime debe empezar antes de endTime' };
+
+  // bloquear fechas del pasado 
+  const appointmentDateTime = new Date(`${date}T${startTime}:00`);
+  const now = new Date(); 
+  
+  if (appointmentDateTime < now) {
+    return { error: 'No se pueden agendar citas en fechas u horas que ya pasaron ' };
+  }
   return { error: null };
 }
 
