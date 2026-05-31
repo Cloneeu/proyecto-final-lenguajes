@@ -63,7 +63,7 @@ export default function ExpedientePaciente() {
         </div>
       ) : (
         <div className="space-y-5">
-          {history.map((record) => (
+          {history.filter(record => !(record as any).deletedAt).map((record) => (
             <div
               key={record.id}
               className="border-l-2 border-emerald-500 pl-5 py-2 bg-sidebar rounded-r-md"

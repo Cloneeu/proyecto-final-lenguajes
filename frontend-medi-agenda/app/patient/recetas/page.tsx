@@ -73,7 +73,7 @@ export default function RecetasPaciente() {
         </div>
       ) : (
         <div className="grid gap-5">
-          {prescriptions.map((rx) => {
+          {prescriptions.filter((rx) => !rx.deletedAt).map((rx) => {
             const doctorName = doctors.find(d => d.id === rx.doctorId)?.name ?? "Médico"
             return (
               <Card key={rx.id} className="bg-card border-emerald-500/20 text-foreground">

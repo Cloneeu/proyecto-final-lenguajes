@@ -8,11 +8,27 @@ function assertOwnership(rx, user) {
 }
 
 export const prescriptionsService = {
-  async getAll(user) {
+  /*async getAll(user) {
     if (user.role === 'doctor') return prescriptionsRepository.findByDoctor(user.id);
     if (user.role === 'patient') return prescriptionsRepository.findByPatient(user.id);
     return prescriptionsRepository.findAll();
+  },*/
+
+  async getAll(user) {
+    let rxList = [];
+    
+    if (user.role === 'doctor') {
+      rxList = await prescriptionsRepository.findByDoctor(user.id);
+    } else if (user.role === 'patient') {
+      rxList = await prescriptionsRepository.findByPatient(user.id);
+    } else {
+      rxList = await prescriptionsRepository.findAll();
+    }
+
+    // 2. Filtramos para NO enviar las que tengan la marca de "deletedAt"
+    return rxList.filter(rx => !rx.deletedAt);
   },
+
 
   async getById(id, user) {
     const rx = await prescriptionsRepository.findById(id);
