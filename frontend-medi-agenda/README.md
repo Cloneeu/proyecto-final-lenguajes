@@ -1,21 +1,31 @@
-# Next.js template
+# MediAgenda - Portal Médico y Gestión de Citas
 
-This is a Next.js template with shadcn/ui.
+MediAgenda es una plataforma web integral diseñada para optimizar la gestión de consultas médicas, expedientes de pacientes y emisión de recetas. Cuenta con dashboards hechos para diferentes roles administrador, doctor, paciente y recepcionista, asegurando un flujo de trabajo eficiente desde la recepción hasta la consulta médica.
 
-## Adding components
 
-To add components to your app, run the following command:
+## Requisitos Previos
 
-```bash
-npx shadcn@latest add button
-```
+Para ejecutar este proyecto de manera local, asegúrate de tener lo siguiente:
 
-This will place the ui components in the `components` directory.
+* **Node.js** (v18 o superior) instalado en tu equipo.
+* **npm** (Gestor de paquetes de Node).
+* **Git** para la clonación del repositorio.
 
-## Using components
 
-To use the components in your app, import them as follows:
+##  Instalación 
 
-```tsx
-import { Button } from "@/components/ui/button";
-```
+### 1. Clonar el repositorio
+
+Abrir la terminal y ejecutar:
+
+git clone https://github.com/Cloneeu/proyecto-final-lenguajes.git
+
+npm install
+npm install firebase date-fns lucide-react bcryptjs
+
+Configurar el .env 
+
+## Correr el servidor y el fronted
+
+Y para correrlo movernos en una terminal con: cd backend-medi-agenda y para correrlo, npm run dev.
+Repetir el proceso en otra terminal pero moviendonos a: cd fronted-medi-agenda.
