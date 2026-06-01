@@ -39,11 +39,11 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export const prescriptionsService = {
   getAll(): Promise<Prescription[] | unknown> {
-    return fetch(`${API_BASE}/prescriptions`, { headers: authHeaders() }).then(handleResponse);
+    return fetch(`${API_BASE}/prescriptions`, { headers: authHeaders(), cache: 'no-store' }).then(handleResponse);
   },
 
   getById(id: string): Promise<Prescription | unknown> {
-    return fetch(`${API_BASE}/prescriptions/${id}`, { headers: authHeaders() }).then(handleResponse);
+    return fetch(`${API_BASE}/prescriptions/${id}`, { headers: authHeaders(), cache: 'no-store' }).then(handleResponse);
   },
 
   create(dto: CreatePrescriptionDto): Promise<Prescription | unknown> {

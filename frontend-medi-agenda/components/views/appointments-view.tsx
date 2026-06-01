@@ -5,6 +5,7 @@
 import * as React from "react"
 import { format } from "date-fns"
 import { CalendarIcon, PlusIcon } from "lucide-react"
+import { useState, useEffect } from "react";
 
 import {
   type Appointment,
@@ -41,14 +42,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-// TODO: reemplazar por doctorsService cuando esté disponible
-const MOCK_DOCTORS = [
-  { id: "doc1", name: "Dr. Alex" },
-  { id: "doc2", name: "Dra. Jacqui" },
-  { id: "doc3", name: "Dr. Eladio" },
-  { id: "doc4", name: "Dr. JP" },
-]
-
 // Defini los colores para cada estado de la cita (por si luego se quiere cambiar mas facil), usados en la tabla principal
 const STATUS_COLORS: Record<Appointment["status"], string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -79,12 +72,16 @@ const EMPTY_FORM: CreateAppointmentDto = {
 }
 
 export function AppointmentsView() {
+  
   const user = useCurrentUser()
 
   // Estados para la lista de citas, filtros, formulario de creación y manejo de errores
   const [appointments, setAppointments] = React.useState<Appointment[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  
+  // ESTADO NUEVO PARA LOS DOCTORES REALES
+  const [doctorsList, setDoctorsList] = React.useState<any[]>([])
 
   // Filtros para mostrar solo ciertas citas según estado, fecha o médico
   const [filterStatus, setFilterStatus] = React.useState<string>("all")
@@ -114,6 +111,20 @@ export function AppointmentsView() {
   React.useEffect(() => {
     if (user !== undefined) load()
   }, [user, load])
+
+  // traer doctores del back 
+  React.useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const response = await fetch("http://localhost:4000/api/doctors");
+        const data = await response.json();
+        setDoctorsList(data);
+      } catch (error) {
+        console.error("Error al traer los doctores:", error);
+      }
+    };
+    fetchDoctors();
+  }, []);
 
   // Filtros aplicados sobre la lista principal
   const filtered = React.useMemo(() => {
@@ -158,16 +169,6 @@ export function AppointmentsView() {
       alert(e instanceof Error ? e.message : "Error eliminando")
     }
   }
-/*
-  // Manejo de cambios de estado de las citas
-  async function handleStatusChange(id: string, status: Status) {
-    try {
-      const updated = await appointmentsService.updateStatus(id, status)
-      setAppointments(prev => prev.map(a => (a.id === id ? (updated as Appointment) : a)))
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Error actualizando estado")
-    }
-  }*/
 
   // Manejo de cambios de estado de las citas
   async function handleStatusChange(id: string, status: Status) {
@@ -181,7 +182,6 @@ export function AppointmentsView() {
       alert(e instanceof Error ? e.message : "Error actualizando estado")
     }
   }
-
 
   // Estados de carga y autenticación
   if (user === undefined) {
@@ -235,7 +235,7 @@ export function AppointmentsView() {
                       <SelectValue placeholder="Seleccionar médico" />
                     </SelectTrigger>
                     <SelectContent>
-                      {MOCK_DOCTORS.map(d => (
+                      {doctorsList.map(d => (
                         <SelectItem key={`form-${d.id}`} value={d.id}>{d.name}</SelectItem>
                       ))}
                     </SelectContent>
@@ -333,7 +333,7 @@ export function AppointmentsView() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los médicos</SelectItem>
-              {MOCK_DOCTORS.map(d => (
+              {doctorsList.map(d => (
                 <SelectItem key={`filter-${d.id}`} value={d.id}>{d.name}</SelectItem>
               ))}
             </SelectContent>
@@ -391,7 +391,7 @@ export function AppointmentsView() {
                     <TableRow key={appt.id}>
                       <TableCell className="font-mono text-xs">{appt.patientId}</TableCell>
                       <TableCell>
-                        {MOCK_DOCTORS.find(d => d.id === appt.doctorId)?.name ?? appt.doctorId}
+                        {doctorsList.find(d => d.id === appt.doctorId)?.name ?? appt.doctorId}
                       </TableCell>
                       <TableCell>{appt.date}</TableCell>
                       <TableCell>{appt.startTime} – {appt.endTime}</TableCell>
@@ -438,5 +438,3 @@ export function AppointmentsView() {
     </div>
   )
 }
-
-

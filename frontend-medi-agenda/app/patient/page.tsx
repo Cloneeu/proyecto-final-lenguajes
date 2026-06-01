@@ -139,16 +139,16 @@ export default function CitasPaciente() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="doctor" className="text-gray-300">Médico Especialista</Label>
+                <Label htmlFor="doctor" className="text-popover-foreground">Médico Especialista</Label>
                 <Select
                   value={formData.doctorId}
                   onValueChange={(val) => setFormData(prev => ({ ...prev, doctorId: val }))}
                   required
                 >
-                  <SelectTrigger className="bg-transparent border-gray-700 text-white">
+                  <SelectTrigger className="bg-popover border-gray-700 text-popover-foreground">
                     <SelectValue placeholder="Selecciona un doctor..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-background border-gray-700 text-white">
+                  <SelectContent className="bg-background border-gray-700 text-popover-foreground">
                     {doctors.map(doc => (
                       <SelectItem key={doc.id} value={doc.id} className="hover:bg-emerald-500/20 focus:bg-emerald-500/20">
                         {doc.name}
@@ -165,7 +165,7 @@ export default function CitasPaciente() {
                     id="date"
                     type="date"
                     required
-                    className="bg-transparent border-gray-700 text-white [color-scheme:dark]"
+                    className="bg-background border-border w-full text-foreground"
                     value={formData.date}
                     onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
                   />
@@ -176,7 +176,7 @@ export default function CitasPaciente() {
                     id="time"
                     type="time"
                     required
-                    className="bg-transparent border-gray-700 text-white [color-scheme:dark]"
+                    className="bg-transparent border-gray-700 text-popover-foreground"
                     value={formData.startTime}
                     onChange={e => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
                   />
@@ -189,7 +189,7 @@ export default function CitasPaciente() {
                   id="reason"
                   placeholder="Ej. Chequeo general, dolor de cabeza..."
                   required
-                  className="bg-transparent border-gray-700 text-white"
+                  className="bg-transparent border-gray-700 text-popover-foreground [color-scheme:dark]"
                   value={formData.reason}
                   onChange={e => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                 />

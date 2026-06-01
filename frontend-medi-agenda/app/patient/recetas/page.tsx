@@ -4,9 +4,10 @@ import * as React from "react"
 import { useAuth } from "@/context/AuthContext"
 import { prescriptionsService, type Prescription } from "@/services/prescriptionsService"
 import { usersService, type UserRecord } from "@/services/usersService"
-import { Loader2, FilePlus } from "lucide-react"
+import { Loader2, FilePlus, Printer } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 export default function RecetasPaciente() {
   const { user } = useAuth()
@@ -72,7 +73,7 @@ export default function RecetasPaciente() {
         </div>
       ) : (
         <div className="grid gap-5">
-          {prescriptions.map((rx) => {
+          {prescriptions.filter((rx) => !rx.deletedAt).map((rx) => {
             const doctorName = doctors.find(d => d.id === rx.doctorId)?.name ?? "Médico"
             return (
               <Card key={rx.id} className="bg-card border-emerald-500/20 text-foreground">
@@ -86,6 +87,15 @@ export default function RecetasPaciente() {
                       {rx.diagnosis}
                     </Badge>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="print:hidden ml-auto border-emerald-500/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="mr-2 size-4" />
+                    Imprimir
+                  </Button>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="space-y-2">

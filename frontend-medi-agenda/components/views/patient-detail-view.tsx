@@ -98,7 +98,7 @@ export function PatientDetailView({ backHref = "/patients" }: PatientDetailViewP
               </div>
             ) : (
               <div className="space-y-6">
-                {history.map((record) => (
+                {history.filter(record => !(record as any).deletedAt).map((record) => (
                   <div key={record.id} className="border-l-2 border-emerald-500 pl-4 py-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-sm font-semibold text-foreground">

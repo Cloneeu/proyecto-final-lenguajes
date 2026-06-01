@@ -16,7 +16,7 @@ export const createSpecialty = async (req, res) => {
         // pasamos los datos por el validador
         const { isValid, errors } = validateSpecialty(req.body);
         if (!isValid) {
-            return res.status(400).json({ message: "Datos inválidos 🧐", errors });
+            return res.status(400).json({ message: "Datos inválidos ", errors });
         }
 
         const { name } = req.body;
@@ -33,7 +33,7 @@ export const updateSpecialty = async (req, res) => {
     try {
         const { isValid, errors } = validateSpecialty(req.body);
         if (!isValid) {
-            return res.status(400).json({ message: "Datos inválidos 🧐", errors });
+            return res.status(400).json({ message: "Datos inválidos ", errors });
         }
 
         const { name } = req.body;

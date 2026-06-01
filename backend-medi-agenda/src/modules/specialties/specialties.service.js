@@ -8,52 +8,57 @@ export const specialtiesService = {
     },
 
     createSpecialty: async (name, currentUser) => {
+        const cleanName = name.trim(); 
+        
         // ¿ya existe una especialidad con el mismo nombre?
         const allSpecialties = await specialtiesRepository.findAll();
         const exists = allSpecialties.some(
-            spec => spec.name.toLowerCase() === name.toLowerCase()
+            spec => spec.name.toLowerCase() === cleanName.toLowerCase()
         );
 
         if (exists) {
-            throw new Error("Esta especialidad ya está registrada en el sistema. 😨");
+            throw Object.assign(new Error("Esta especialidad ya está registrada en el sistema. "), { status: 409 });
         }
 
-        const newSpecialty = await specialtiesRepository.create(name);
+        const newSpecialty = await specialtiesRepository.create(cleanName);
 
         await auditsService.logAction({
             currentUser,
             action: 'CREATE',
             resource: 'SPECIALTY',
             resourceId: newSpecialty.id || 'N/A',
-            details: `Nueva especialidad creada: ${name}`
+            details: `Nueva especialidad creada: ${cleanName}`
         }).catch(err => console.error("Error auditoría:", err));
 
         return newSpecialty;
     },
 
     updateSpecialty: async (id, name, currentUser) => {
+        const cleanName = name.trim();
         const current = await specialtiesRepository.findById(id);
+        
         if (!current) {
             throw Object.assign(new Error("Especialidad no encontrada"), { status: 404 });
         }
 
-        // El nombre no puede chocar con otra especialidad distinta
+        // el nomre no poeude chocar con otra especialidad disitinta 
         const allSpecialties = await specialtiesRepository.findAll();
         const exists = allSpecialties.some(
-            spec => spec.id !== id && spec.name.toLowerCase() === name.toLowerCase()
+            spec => spec.id !== id && spec.name.toLowerCase() === cleanName.toLowerCase()
         );
+        
         if (exists) {
-            throw new Error("Ya existe otra especialidad con ese nombre. 😨");
+            throw Object.assign(new Error("Ya existe otra especialidad con ese nombre. 😨"), { status: 409 });
         }
 
-        const updated = await specialtiesRepository.update(id, name);
+        const updated = await specialtiesRepository.update(id, cleanName);
 
         await auditsService.logAction({
             currentUser,
             action: 'UPDATE',
             resource: 'SPECIALTY',
             resourceId: id,
-            details: `Especialidad actualizada: ${current.name} → ${name}`
+            details: `Especialidad actualizada: ${current.name} → ${cleanName}`
         }).catch(err => console.error("Error auditoría:", err));
 
         return updated;

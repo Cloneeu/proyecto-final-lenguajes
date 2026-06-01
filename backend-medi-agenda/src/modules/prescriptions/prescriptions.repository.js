@@ -6,7 +6,8 @@ export const prescriptionsRepository = {
   async findAll() {
     // Obtiene todas las recetas ordenadas por creación (más recientes primero)
     const snap = await db.collection(COLLECTION).orderBy('createdAt', 'desc').get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    .filter(rx => !rx.deletedAt); // Filtra las recetas que no tienen la marca de "deletedAt"
   },
 
   async findById(id) {
@@ -24,6 +25,7 @@ export const prescriptionsRepository = {
     // Convertir los docs de firestore a objetos de javascript y ordenar por fecha de creación para mostrar primero lo más reciente
     return snap.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(rx => !rx.deletedAt) 
       .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
   },
 
@@ -35,6 +37,7 @@ export const prescriptionsRepository = {
     // Convertir los docs de firestore a objetos de javascript y ordenar por fecha de creación para mostrar primero lo más reciente
     return snap.docs
       .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter(rx => !rx.deletedAt)
       .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''));
   },
 
