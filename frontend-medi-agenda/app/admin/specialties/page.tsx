@@ -179,7 +179,13 @@ export default function SpecialtiesPage() {
           </p>
         </div>
 
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <Dialog open={createOpen} onOpenChange={(open) => {
+              setCreateOpen(open)
+              if (!open) {
+                setNewSpecialtyName("")
+                setCreateError(null)
+              }
+            }}>
           <DialogTrigger asChild>
             <Button>
               <PlusIcon className="mr-2 size-4" />

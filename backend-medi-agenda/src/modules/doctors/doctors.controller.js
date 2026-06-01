@@ -16,7 +16,7 @@ export const createDoctor = async (req, res) => {
         // Usamos el validador antes de procesar nada
         const { isValid, errors } = validateDoctor(req.body);
         if (!isValid) {
-            return res.status(400).json({ message: "Datos inválidos 🧐", errors });
+            return res.status(400).json({ message: "Datos inválidos ", errors });
         }
 
         const { name, specialtyId, email, phone } = req.body;
