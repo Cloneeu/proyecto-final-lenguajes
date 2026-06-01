@@ -46,6 +46,16 @@ export default function RegistroPacientePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.fechaCita) {
+      const selectedDate = new Date(formData.fechaCita);
+      const now = new Date();
+      
+      if (selectedDate < now) {
+        alert("La fecha u hora seleccionada ya paso , no es valida");
+        return; 
+      }
+    }
     try {
       const payload = {
         name: `${formData.nombre} ${formData.apellidos}`,
@@ -87,10 +97,15 @@ export default function RegistroPacientePage() {
 
             <div className="space-y-2">
               <Label>Médico</Label>
-              <select name="doctorId" required onChange={handleChange} className="w-full border p-2 rounded bg-sidebar text-black">
-                <option value="">Selecciona un médico</option>
+              <select 
+                name="doctorId" 
+                required 
+                onChange={handleChange} 
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option className="bg-zinc-900 text-white" value="">Selecciona un médico</option>
                 {doctores.map((doc) => (
-                  <option key={doc.id} value={doc.id}>{doc.name}</option>
+                  <option className="bg-zinc-900 text-white" key={doc.id} value={doc.id}>{doc.name}</option>
                 ))}
               </select>
             </div>
