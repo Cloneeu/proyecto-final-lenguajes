@@ -8,10 +8,9 @@ import {
   ClockIcon,
   CalendarDaysIcon,
   CalendarIcon,
-  UsersIcon,
   StethoscopeIcon,
   LogOutIcon,
-} from "lucide-react"
+} from "lucide-react" 
 import { useAuth } from "@/context/AuthContext"
 import {
   SidebarProvider,
@@ -28,13 +27,11 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 
-// Aqui muevanle para que se ponga en la sidebar la pestaña
 const NAV_ITEMS = [
   { href: "/receptionist", label: "Resumen", icon: LayoutDashboardIcon },
   { href: "/receptionist/pendientes", label: "Solicitudes Pendientes", icon: ClockIcon },
   { href: "/receptionist/agenda", label: "Agenda de Citas", icon: CalendarDaysIcon },
   { href: "/receptionist/appointments", label: "Citas", icon: CalendarIcon },
-  { href: "/receptionist/patients", label: "Pacientes", icon: UsersIcon },
 ]
 
 export default function ReceptionistLayout({ children }: { children: React.ReactNode }) {
