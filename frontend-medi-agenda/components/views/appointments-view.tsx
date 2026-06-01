@@ -145,6 +145,16 @@ export function AppointmentsView() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setFormError(null)
+
+    if (form.date && form.startTime) {
+      const appointmentDateTime = new Date(`${form.date}T${form.startTime}:00`);
+      const now = new Date();
+      
+      if (appointmentDateTime < now) {
+        setFormError("La hora seleccionada ya pasó.");
+        return; 
+      }
+    }
     setSubmitting(true)
     try {
       await appointmentsService.create(form)
